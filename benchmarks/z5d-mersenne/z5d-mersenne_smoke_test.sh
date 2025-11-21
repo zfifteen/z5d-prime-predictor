@@ -60,8 +60,8 @@ for K in "${K_VALUES[@]}"; do
     window_max="$final_window"
   fi
   params="wheel=$WHEEL;auto_tune=1;target=1"
-  printf "z5d-mersenne,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
-    "$scenario" "$PREC" "$MR" "$params" "$K" "${primes_found:-0}" "${locked:-false}" "${window_max:-}" "${final_window:-}" "${step:-}" "${R:-}" "${wall_ms:-}" "${candidates:-}" >>"$CSV"
+  printf "z5d-mersenne,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+    "$scenario" "$PREC" "$MR" "$params" "$K" "${primes_found:-0}" "${locked:-false}" "${window_max:-}" "${final_window:-}" "${step:-}" "${R:-}" "${wall_ms:-}" "${candidates:-}" "${prime_found:-}" >>"$CSV"  # include prime_found
   rm -f "$TMP"
   # Require lock for smoke
   if [[ "${locked:-false}" != "true" ]]; then
