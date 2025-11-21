@@ -1,20 +1,35 @@
-# Z5D Prime Predictor (Apple Silicon, C/MPFR)
+# Z5D Prime Predictor (Apple Silicon only)
 
-Apple‑only port of the Z5D nth‑prime tools.
+`z5d-prime-predictor` is a suite of high-performance C tools for estimating and finding large prime numbers. The name reflects its core principles: 'Z' for the Riemann Hypothesis and '5D' for a proprietary five-dimensional algorithm that models the predictor.
 
-`src/c/` layout:
-- `z5d-predictor-c/` — MPFR/GMP nth-prime library, CLI, tests, bench (64-bit n input).
-- `z5d-mersenne/` — Wave-Knob MPFR scanner that accepts arbitrary-precision k (e.g., 1e1233) and searches near a Z5D estimate with wheel + Miller–Rabin; heuristic “find a prime near k” tool.
-- `prime-generator/` — GMP/MPFR prime scanner that steps forward from an arbitrary start (e.g., 10^1234), with Z5D-informed jumps and optional CSV output.
+The project is optimized for Apple Silicon and uses MPFR/GMP for high-precision arithmetic.
 
-Build (Apple Silicon, requires Homebrew mpfr/gmp):
-- Predictor CLI/tests: `cd src/c/z5d-predictor-c && make`
-- Wave-Knob scanner: `cd src/c/z5d-mersenne && make`
+Components (see `src/c/C-IMPLEMENTATION.md` for detailed C layout):
+- `z5d-predictor-c/` — nth-prime predictor library + CLI/tests/bench (64‑bit k).
+- `z5d-mersenne/` — Wave-Knob centered scanner: take large k, use Z5D estimate, search nearby prime with wheel + MR.
+- `prime-generator/` — forward walker from an arbitrary numeric start with Z5D-informed jumps; CSV-friendly.
+- `includes/` — shared `z_framework_params.h`.
+- `build_all.sh` — clean + build all three modules.
 
-Usage examples:
-- Predictor CLI (64-bit n): `src/c/z5d-predictor-c/bin/z5d_cli 1000000`
-- Wave-Knob scanner (arbitrary k): `src/c/z5d-mersenne/bin/z5d_mersenne 1e6 --prec=2048 --auto-tune`
+Requirements
+- macOS on Apple Silicon.
+- Homebrew `mpfr` and `gmp` installed in default locations.
 
-Notes:
-- This repo targets macOS on Apple Silicon only; no Linux/Windows support.
-- `z5d_mersenne` finds a nearby prime, not a certified p_k. Increase `--prec`, `--window`, `--mr-rounds` for huge k.
+Build
+- Fast path: `./src/c/build_all.sh`
+- Per module: `cd src/c/z5d-predictor-c && make`, `cd src/c/z5d-mersenne && make`, `cd src/c/prime-generator && make`
+
+Usage quick reference
+- Predictor (64‑bit k): `src/c/z5d-predictor-c/bin/z5d_cli 1000000000`
+- Mersenne scanner (nearby prime for big k): `src/c/z5d-mersenne/bin/z5d_mersenne 1e18 --json`
+- Prime generator (next prime after start): `src/c/prime-generator/bin/prime_generator --start 10^20 --count 1 --csv`
+
+Smoke tests (generate CSV+MD with conclusion-first headers)
+- `benchmarks/prime-generator/prime-generator_smoke_test.sh`
+- `benchmarks/z5d-mersenne/z5d-mersenne_smoke_test.sh`
+- `benchmarks/z5d-predictor-c/z5d-predictor-c_smoke_test.sh`
+Outputs land under `benchmarks/<program>/` and require paired CSV/Markdown per run.
+
+Notes
+- Apple-only; no Linux/Windows fallbacks.
+- `z5d_mersenne` finds a nearby prime, not exact p_k. Increase precision/window/MR for huge k.
