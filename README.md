@@ -33,3 +33,4 @@ Outputs land under `benchmarks/<program>/` and require paired CSV/Markdown per r
 Notes
 - Apple-only; no Linux/Windows fallbacks.
 - `z5d_mersenne` finds a nearby prime, not exact p_k. Increase precision/window/MR for huge k.
+- Precision vs massive k explanation (2025-11-21T07:40:13.663Z): We use MPFR precision (e.g. 2048 bits) only for floating operations (logs, initial nth-prime approximation). The actual candidate generation and Miller–Rabin tests operate on arbitrary-size GMP mpz integers, so very large primes (e.g. near index k = 1e1233) are still handled exactly. Average prime gaps near p_k grow like log p; at k=1e1233 this gap (~2.8e3) is far smaller than the effective search span window * wheel_modulus (e.g. 64 * 210 ≈ 1.3e4). Thus a coarse high-scale prediction plus adaptive window tuning reliably lands on a nearby prime without requiring floating precision scaled to the full digit length of k.
