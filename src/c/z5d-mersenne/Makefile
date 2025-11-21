@@ -6,7 +6,7 @@ MPFR_INCLUDE ?= -I$(PREFIX)/include
 MPFR_LIB ?= -L$(PREFIX)/lib -lmpfr
 GMP_LIB ?= -L$(PREFIX)/lib -lgmp
 
-INC := -I. -I../z5d-predictor-c/include $(MPFR_INCLUDE)
+INC := -I. -I../z5d-predictor-c/include -I../includes $(MPFR_INCLUDE)
 CFLAGS := -O3 -march=native -Wall -Wextra $(INC)
 LDFLAGS := $(MPFR_LIB) $(GMP_LIB) -lm
 

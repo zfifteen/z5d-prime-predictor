@@ -20,6 +20,7 @@
 # Directories
 SRC_DIR := src
 INCLUDE_DIR := include
+EXTRA_INC := -I../includes
 TEST_DIR := tests
 BUILD_DIR := build
 BIN_DIR := bin
@@ -42,7 +43,7 @@ ifneq (,$(filter missing_%,$(MISSING)))
 $(error GMP/MPFR not found at Homebrew paths (/opt/homebrew). Install with `brew install gmp mpfr` or override GMP_INCLUDE/MPFR_INCLUDE/GMP_LIB/MPFR_LIB)
 endif
 
-CFLAGS := -O3 -march=native -Wall -Wextra -I$(INCLUDE_DIR) $(GMP_INCLUDE) $(MPFR_INCLUDE)
+CFLAGS := -O3 -march=native -Wall -Wextra -I$(INCLUDE_DIR) $(EXTRA_INC) $(GMP_INCLUDE) $(MPFR_INCLUDE)
 LDFLAGS := $(GMP_LIB) $(MPFR_LIB) -lm
 
 # Debug flags
