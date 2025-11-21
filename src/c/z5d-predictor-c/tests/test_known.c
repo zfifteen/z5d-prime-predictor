@@ -44,7 +44,7 @@ static int run_test(const test_case_t* test) {
     
     printf("Testing n = %s (%llu)...\n", test->label, (unsigned long long)test->n);
     
-    int ret = z5d_predict_nth_prime_ex(&result, test->n, &config);
+    z5d_predict_nth_prime_ex(&result, test->n, &config);
     
     // Convert prediction to string for comparison
     char pred_str[256];

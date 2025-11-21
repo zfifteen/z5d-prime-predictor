@@ -295,7 +295,7 @@ static int lucas_prefilter_gmp(const mpz_t n) {
 }
 
 // LIS-Corrector full pipeline: Wheel-30 + Lucas + Miller-Rabin
-static int is_probable_prime(const mpz_t n) {
+static int __attribute__((unused)) is_probable_prime(const mpz_t n) {
     // Step 1: Wheel-30 optimization
     if (!is_wheel30_candidate(n)) {
         return 0;
@@ -313,8 +313,8 @@ static int is_probable_prime(const mpz_t n) {
 // Enhanced wheel-30 candidate generation with OpenMP
 static void next_wheel30_candidate(mpz_t candidate) {
     // Move to next wheel-30 position: {1,11,13,17,19,23,29,31} mod 30
-    static const int wheel30[] = {1,11,13,17,19,23,29,31};
-    static const int wheel30_gaps[] = {10,2,4,2,4,6,2,6}; // gaps to next position
+    static const unsigned long wheel30[] = {1,11,13,17,19,23,29,31};
+    static const unsigned long wheel30_gaps[] = {10,2,4,2,4,6,2,6}; // gaps to next position
 
     mpz_t mod_result;
     mpz_init(mod_result);

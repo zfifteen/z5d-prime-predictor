@@ -37,7 +37,7 @@ static int run_test(const test_case_t* test) {
     
     printf("Testing n = %s (%llu)...\n", test->label, (unsigned long long)test->n);
     
-    int ret = z5d_predict_nth_prime_ex(&result, test->n, &config);
+    z5d_predict_nth_prime_ex(&result, test->n, &config);
     
     printf("  Predicted:  ");
     mpfr_out_str(stdout, 10, 0, result.predicted_prime, MPFR_RNDN);

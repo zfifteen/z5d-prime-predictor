@@ -40,7 +40,7 @@ static void run_benchmark(uint64_t n, const char* expected) {
     
     printf("\n--- n = %llu ---\n", (unsigned long long)n);
     
-    int ret = z5d_predict_nth_prime_ex(&result, n, &config);
+    z5d_predict_nth_prime_ex(&result, n, &config);
     
     printf("Predicted: ");
     mpfr_out_str(stdout, 10, 0, result.predicted_prime, MPFR_RNDN);
@@ -86,7 +86,7 @@ static void run_benchmark(uint64_t n, const char* expected) {
     z5d_config_clear(&config);
 }
 
-int main(int argc, char** argv) {
+int main(int argc __attribute__((unused)), char** argv __attribute__((unused))) {
     printf("Z5D nth-Prime Predictor Benchmark\n");
     printf("==================================\n");
     printf("Version: %s\n", z5d_get_version());
