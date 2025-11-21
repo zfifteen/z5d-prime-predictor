@@ -1,0 +1,13 @@
+{
+  "k": "2718281828459045235",
+  "window": 12,
+  "step": 2,
+  "R": 6.000000,
+  "prime_count": 1,
+  "iterations": 4,
+  "mr_calls": 169,
+  "elapsed_ms": 0.353,
+  "locked": true,
+  "wheel_residue": "mod_210",
+  "prime_found": "122852140732852105699"
+}
