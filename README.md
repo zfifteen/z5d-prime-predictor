@@ -5,6 +5,7 @@ Apple‑only port of the Z5D nth‑prime tools.
 `src/c/` layout:
 - `z5d-predictor-c/` — MPFR/GMP nth-prime library, CLI, tests, bench (64-bit n input).
 - `z5d-mersenne/` — Wave-Knob MPFR scanner that accepts arbitrary-precision k (e.g., 1e1233) and searches near a Z5D estimate with wheel + Miller–Rabin; heuristic “find a prime near k” tool.
+- `prime-generator/` — GMP/MPFR prime scanner that steps forward from an arbitrary start (e.g., 10^1234), with Z5D-informed jumps and optional CSV output.
 
 Build (Apple Silicon, requires Homebrew mpfr/gmp):
 - Predictor CLI/tests: `cd src/c/z5d-predictor-c && make`
