@@ -1,0 +1,15 @@
+tool,scenario,precision_bits,mr_rounds,params,k,primes_found,locked,window_max,final_window,step,R,wall_ms,candidates,prime_found
+z5d-mersenne,Sanity,2048,8,wheel=210;auto_tune=1;target=1,1e5,1,true,64,5,2,2.500000,0.082,137
+z5d-mersenne,Sanity,2048,8,wheel=210;auto_tune=1;target=1,1e10,1,true,64,5,2,2.500000,0.108,168
+z5d-mersenne,Mid,2048,8,wheel=210;auto_tune=1;target=1,1e18,1,true,64,12,2,6.000000,0.649,393
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e100,1,true,64,63,2,31.500000,1.700,171
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e200,1,true,96,96,2,48.000000,6.145,162
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e300,1,true,64,64,2,32.000000,6.616,65
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e400,1,true,64,64,2,32.000000,16.213,65
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e500,1,true,96,96,2,48.000000,52.147,162
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e600,1,true,96,96,2,48.000000,79.770,162
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e700,1,true,64,64,2,32.000000,52.844,65
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e800,1,true,486,486,2,243.000000,1479.798,1336
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e900,1,true,96,96,2,48.000000,309.518,162
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e1000,1,true,1093,728,2,364.000000,8335.427,3887
+z5d-mersenne,Large,2048,8,wheel=210;auto_tune=1;target=1,1e1233,1,true,729,729,2,364.500000,7752.756,2065

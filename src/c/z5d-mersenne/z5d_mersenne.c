@@ -23,6 +23,12 @@
  * @version 1.0 (Wave-Knob Initial Implementation)
  */
 
+/* TODO[2025-11-21T07:01:25Z]: Integrate core Z5D predictor instead of placeholder PNT+adj.
+   - Initialize z5d library in main and configure precision/K/iterations/tolerance from CLI.
+   - Replace compute_z5d_prediction_mpfr pipeline with z5d_predict_nth_prime_ex wrapper that outputs prediction and error.
+   - Use predicted error to seed window/step (R = window/step) and expose z5d telemetry in outputs.
+   - Add CLI flags: --z5d-K, --z5d-iters, --z5d-tol; validate k fits uint64_t else implement MPFR-n variant.
+   - Call z5d_cleanup on shutdown. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -161,8 +167,14 @@ int main(int argc, char **argv) {
     }
     
     // Copy k to result (convert MPFR to MPZ)
+    // TODO[2025-11-21]: Also extract k as uint64_t for z5d API; if k > UINT64_MAX, add MPFR-n API path.
     mpfr_get_z(result.k_value, k_input, MPFR_RNDN);
     
+    // TODO[2025-11-21]: Swap placeholder predictor with z5d_predict_nth_prime_ex:
+    // - Build z5d_config_t from CLI (precision=..., K, max_iterations, tolerance)
+    // - Convert k (MPFR) to uint64_t n when possible; for larger n, add z5d_predict_nth_prime_mpfr
+    // - Call z5d_predict_nth_prime_ex, assign prediction=result.predicted_prime and capture z5d telemetry
+    // - Derive initial window/step from result.error (e.g., window ~= ceil(5*error)) before scanning
     // Compute Z5D prediction with high precision
     double pred_time = compute_z5d_prediction_mpfr(k_input, prediction, config.precision);
     
@@ -199,6 +211,7 @@ cleanup:
         mpfr_clear(k_input);
         mpfr_clear(prediction);
         mpfr_free_cache();
+        // TODO[2025-11-21]: If z5d_init() is introduced, call z5d_cleanup() here.
     }
     
     return ret;
@@ -286,6 +299,7 @@ static void cleanup_wave_result(wave_result_t *result) {
 }
 
 static int parse_arguments(int argc, char **argv, wave_config_t *config, mpfr_t k_input) {
+    // TODO[2025-11-21]: Add Z5D-specific flags: --z5d-K, --z5d-iters, --z5d-tol=<mpfr float>, and map to z5d_config.
     static struct option long_options[] = {
         {"scan", no_argument, 0, 's'},
         {"auto-tune", no_argument, 0, 'a'},
@@ -549,6 +563,7 @@ static int auto_tune_scan(const mpfr_t prediction, wave_config_t *config, wave_r
         return -1;
     }
     
+    // TODO[2025-11-21]: Seed window/step from z5d error: window = clamp(ceil(c*error), min,max), adjust step accordingly; keep R invariant.
     unsigned long window = config->window;
     unsigned long step = config->step;
     unsigned int iteration = 0;
@@ -682,6 +697,7 @@ static void output_json_result(const wave_result_t *result, FILE *fp) {
     fprintf(fp, "  \"R\": %.6f,\n", result->ratio);
     fprintf(fp, "  \"prime_count\": %u,\n", result->prime_count);
     fprintf(fp, "  \"iterations\": %u,\n", result->iterations);
+    // TODO[2025-11-21]: Include z5d telemetry fields: z5d_iterations, z5d_converged, z5d_error, z5d_K, z5d_precision.
     fprintf(fp, "  \"mr_calls\": %lu,\n", result->mr_calls);
     fprintf(fp, "  \"elapsed_ms\": %.3f,\n", result->elapsed_ms);
     fprintf(fp, "  \"locked\": %s,\n", result->locked ? "true" : "false");
@@ -702,6 +718,7 @@ static void output_human_result(const wave_result_t *result, const wave_config_t
            result->window, result->step, result->ratio);
     printf("Prime count: %u\n", result->prime_count);
     printf("Tuning iterations: %u\n", result->iterations);
+    // TODO[2025-11-21]: Print z5d predictor telemetry (converged?, iterations, error estimate, K, precision) before scanning stats.
     printf("Miller-Rabin calls: %lu\n", result->mr_calls);
     printf("Elapsed time: %.3f ms\n", result->elapsed_ms);
     printf("Status: %s\n", result->locked ? "LOCKED" : "FAILED");
