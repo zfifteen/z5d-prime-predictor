@@ -1,32 +1,60 @@
 #!/usr/bin/env bash
-# Smoke test plan for prime_generator at ~1e18 scale (Apple Silicon)
-#
-# Goal:
-# - Prove end-to-end path works at high magnitude with realistic defaults.
-# - Quick, single-prime run; no long scans.
-#
-# Scenario:
-# - Start value: choose a composite around 1e18 (e.g., 1000000000000000000).
-# - Expected next prime in that neighborhood: 1000000000000000003 (for 1e18).
-# - Precision: leave default MPFR (~256 bits) unless a flag sets it; note what was used.
-# - MR rounds: use program defaults (don’t lower at this scale).
-#
-# Command (to be filled when running):
-# - From src/c/prime-generator: ./bin/prime_generator <start> --max=1
-#   (If no --max flag exists, rely on first-hit exit.)
-#
-# Checks:
-# - Exit code == 0.
-# - Output prime > start; ideally equals known next prime (e.g., 1e18+3).
-# - Wall time target: < ~250 ms on M1 Max for a single find at this scale.
-#
-# Artifacts (to write when executed):
-# - benchmarks/prime-generator/smoke-1e18.csv with columns:
-#     start, prime_found, elapsed_ms, prec_bits, mr_rounds
-# - benchmarks/prime-generator/smoke-1e18.md:
-#     Headline = conclusion (e.g., “Found 1e18+3 prime in 180 ms”),
-#     followed by method, command, params, and observations.
-#
-# Notes:
-# - Keep this smoke run minimal; it’s a health check, not a sweep.
-# - Run on Apple Silicon with Homebrew GMP/MPFR; no Linux/Windows paths needed.
+set -euo pipefail
+
+# Smoke test runner for prime_generator at ~1e18 scale (Apple Silicon)
+# Produces matching CSV + Markdown (conclusion-first) in this folder.
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+BIN="$ROOT/src/c/prime-generator/bin/prime_generator"
+OUT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE="prime-generator_smoke-1e18"
+CSV="$OUT_DIR/${BASE}.csv"
+MD="$OUT_DIR/${BASE}.md"
+
+# Pick a large composite near 1e18; expected next prime is start+3 for this value.
+START="${START:-1000000000000000000}"
+EXPECTED="${EXPECTED:-1000000000000000003}"
+
+# Build if missing
+if [[ ! -x "$BIN" ]]; then
+  echo "Building prime_generator..."
+  "$ROOT/src/c/build_all.sh" >/dev/null
+fi
+
+cmd=( "$BIN" --start "$START" --count 1 --csv )
+
+echo "Running: ${cmd[*]}"
+output="$("${cmd[@]}")"
+
+# Parse CSV output (header + one row)
+line=$(printf "%s\n" "$output" | tail -n 1)
+IFS=',' read -r idx prime is_mersenne ms_report <<<"$line"
+
+# Use program-reported ms as canonical runtime (external shell timing overhead dominates this tiny run)
+elapsed_ms="$ms_report"
+
+# Write our normalized CSV
+{
+  echo "start,prime_found,elapsed_ms,ms_reported,is_mersenne"
+  echo "$START,$prime,$elapsed_ms,$ms_report,$is_mersenne"
+} > "$CSV"
+
+# Write Markdown explainer (conclusion-first)
+cat > "$MD" <<EOF
+Conclusion: Found prime $prime starting from $START in ${elapsed_ms} ms (program-reported); is_mersenne=${is_mersenne}.
+
+Details:
+- Command: ${cmd[*]}
+- Start value: $START
+- Expected (reference): $EXPECTED
+- Prime found: $prime
+- Program-reported time (ms): $ms_report
+- Mersenne flag: $is_mersenne
+- Platform: Apple Silicon, MPFR/GMP via Homebrew, defaults for precision and MR rounds.
+
+Notes:
+- This is a smoke test only; count=1, default filters/jumps enabled.
+- Consider re-running if the prime differs from expected or if wall time exceeds target (< ~250 ms).
+EOF
+
+echo "Wrote $CSV and $MD"

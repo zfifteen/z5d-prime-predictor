@@ -554,12 +554,13 @@ int main(int argc, char** argv) {
 
     for (unsigned long i = 1; i <= cfg.count; ++i) {
         clock_t t0 = clock();
+        double start_ms = now_ms();
         next_prime_from(candidate, prime, cfg.verbose, cfg.show_stats);
 
         int is_mers = detect_mersenne_and_test(prime);
 
         if (cfg.csv) {
-            double elapsed_ms = now_ms() - (double)t0 * 1000.0 / CLOCKS_PER_SEC;
+            double elapsed_ms = now_ms() - start_ms;
             print_csv_row(i, prime, is_mers, elapsed_ms);
         } else {
             // Use vectorized timing logger with bootstrap integration

@@ -1,0 +1,2 @@
+k,prime_found,window,step,mr_calls,elapsed_ms,locked,wheel_residue
+1000000000000000007,44170935877036944823,12,2,379,3.252,True,mod_210

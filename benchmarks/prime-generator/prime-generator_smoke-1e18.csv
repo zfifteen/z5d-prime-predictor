@@ -1,0 +1,2 @@
+start,prime_found,elapsed_ms,ms_reported,is_mersenne
+1000000000000000000,1000000000000000003,0.132,0.132,0
