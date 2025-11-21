@@ -1,0 +1,21 @@
+Wave-Knob Prime Scanner v1.0.0
+MPFR precision: 2048 bits (~616 decimal digits)
+Target k: 3e+20
+Z5D prediction: 2e+22 (computed in 0.445 ms)
+
+Starting auto-tune scan (target count: 1):
+Iter 1: window=64, step=2, R=32.000, count=6
+Iter 2: window=42, step=2, R=21.000, count=7
+Iter 3: window=28, step=2, R=14.000, count=3
+Iter 4: window=18, step=2, R=9.000, count=1
+✅ LOCKED at R* = 9.000000 after 3 iterations
+
+Wave-Knob Scanning Results:
+k = 314159265358979323846
+Final parameters: window=18, step=2, R=9.000000
+Prime count: 1
+Tuning iterations: 3
+Miller-Rabin calls: 156
+Elapsed time: 0.359 ms
+Status: LOCKED
+Prime found: 15723906862244806995857
