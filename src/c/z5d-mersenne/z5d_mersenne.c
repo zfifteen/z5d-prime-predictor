@@ -120,6 +120,8 @@ int main(int argc, char **argv) {
     wave_result_t result;
     mpfr_t k_input, prediction;
     int ret = 0;
+    int mpfr_inited = 0;
+    int result_inited = 0;
     
     g_start_time = clock();
     
@@ -127,14 +129,17 @@ int main(int argc, char **argv) {
     init_wave_config(&config);
     
     // Parse arguments to get precision setting
-    if (parse_arguments(argc, argv, &config, NULL) != 0) {  // Pass NULL for k_input initially
-        ret = 1;
-        goto cleanup;
+    int parse_ret = parse_arguments(argc, argv, &config, NULL);  // Pass NULL for k_input initially
+    if (parse_ret != 0) {
+        // parse_ret > 0 indicates help/version was handled
+        cleanup_wave_config(&config);
+        return (parse_ret > 0) ? 0 : 1;
     }
     
     // Now initialize MPFR with correct precision
     mpfr_init2(k_input, config.precision);
     mpfr_init2(prediction, config.precision);
+    mpfr_inited = 1;
     
     // Re-parse k value with correct precision
     if (mpfr_set_str(k_input, argv[1], 0, MPFR_RNDN) != 0) {
@@ -145,6 +150,7 @@ int main(int argc, char **argv) {
     
     // Initialize result structure
     init_wave_result(&result);
+    result_inited = 1;
     
     if (config.verbose) {
         printf("Wave-Knob Prime Scanner v%s\n", VERSION);
@@ -186,10 +192,14 @@ int main(int argc, char **argv) {
     
 cleanup:
     cleanup_wave_config(&config);
-    cleanup_wave_result(&result);
-    mpfr_clear(k_input);
-    mpfr_clear(prediction);
-    mpfr_free_cache();
+    if (result_inited) {
+        cleanup_wave_result(&result);
+    }
+    if (mpfr_inited) {
+        mpfr_clear(k_input);
+        mpfr_clear(prediction);
+        mpfr_free_cache();
+    }
     
     return ret;
 }
@@ -301,11 +311,11 @@ static int parse_arguments(int argc, char **argv, wave_config_t *config, mpfr_t 
     // Quick check for help/version before requiring k
     if (argc >= 2 && (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)) {
         print_usage(argv[0]);
-        return 0;
+        return 1;  // signal handled (no error)
     }
     if (argc >= 2 && strcmp(argv[1], "--version") == 0) {
         print_version();
-        return 0;
+        return 1;  // signal handled (no error)
     }
     
     if (argc < 2) {

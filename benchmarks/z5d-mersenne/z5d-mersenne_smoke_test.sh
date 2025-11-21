@@ -13,6 +13,8 @@ MD="$OUT_DIR/${BASE}.md"
 
 # Configure k near 1e18 (fits current CLI expectations)
 K_VAL="${K_VAL:-1000000000000000007}"
+MAX_MS="${MAX_MS:-20000}"          # generous wall cap in ms for smoke
+REQUIRE_LOCKED="${REQUIRE_LOCKED:-true}"
 
 # Build if missing
 if [[ ! -x "$BIN" ]]; then
@@ -38,6 +40,34 @@ print(
     data.get("wheel_residue","")
 )'
 read -r prime window step mr_calls elapsed_ms locked wheel <<<"$(python3 -c "$parse_py" <<<"$output")"
+
+# Assertions
+fail=0
+if [[ -z "$prime" ]]; then
+  echo "FAIL: no prime returned" >&2
+  fail=1
+fi
+if [[ "$REQUIRE_LOCKED" == "true" && "$locked" != "True" && "$locked" != "true" ]]; then
+  echo "FAIL: locked flag is $locked" >&2
+  fail=1
+fi
+ms_int=$(python3 - <<PY
+try:
+    import math
+    v=float("$elapsed_ms")
+    print(int(math.ceil(v)))
+except Exception:
+    print(9999999)
+PY
+)
+if (( ms_int > MAX_MS )); then
+  echo "FAIL: elapsed_ms $elapsed_ms exceeds MAX_MS $MAX_MS" >&2
+  fail=1
+fi
+if [[ -z "$mr_calls" || "$mr_calls" == "None" ]]; then
+  echo "FAIL: missing mr_calls" >&2
+  fail=1
+fi
 
 # Write CSV
 {
@@ -65,3 +95,4 @@ Notes:
 EOF
 
 echo "Wrote $CSV and $MD"
+exit $fail

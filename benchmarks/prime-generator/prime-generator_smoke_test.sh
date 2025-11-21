@@ -14,6 +14,7 @@ MD="$OUT_DIR/${BASE}.md"
 # Pick a large composite near 1e18; expected next prime is start+3 for this value.
 START="${START:-1000000000000000000}"
 EXPECTED="${EXPECTED:-1000000000000000003}"
+MAX_MS="${MAX_MS:-1000}"   # max acceptable per-prime time in ms for smoke
 
 # Build if missing
 if [[ ! -x "$BIN" ]]; then
@@ -32,6 +33,26 @@ IFS=',' read -r idx prime is_mersenne ms_report <<<"$line"
 
 # Use program-reported ms as canonical runtime (external shell timing overhead dominates this tiny run)
 elapsed_ms="$ms_report"
+
+# Assertions
+fail=0
+if [[ "$prime" != "$EXPECTED" ]]; then
+  echo "FAIL: prime_found $prime != EXPECTED $EXPECTED" >&2
+  fail=1
+fi
+ms_int=$(python3 - <<PY
+import math
+try:
+    v=float("$elapsed_ms")
+    print(int(math.ceil(v)))
+except Exception:
+    print(9999999)
+PY
+)
+if (( ms_int > MAX_MS )); then
+  echo "FAIL: elapsed_ms $elapsed_ms exceeds MAX_MS $MAX_MS" >&2
+  fail=1
+fi
 
 # Write our normalized CSV
 {
@@ -58,3 +79,4 @@ Notes:
 EOF
 
 echo "Wrote $CSV and $MD"
+exit $fail

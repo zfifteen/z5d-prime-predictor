@@ -14,6 +14,9 @@ MD="$OUT_DIR/${BASE}.md"
 # Known ground truth: p_1e9 = 22801763489 (OEIS A006988)
 K_VAL="${K_VAL:-1000000000}"
 P_TRUE="${P_TRUE:-22801763489}"
+# Guardrails
+MAX_ABS_ERR="${MAX_ABS_ERR:-1000000}"   # tolerate up to 1e6 absolute error for smoke
+MAX_MS="${MAX_MS:-500}"                 # max allowable wall time in ms
 
 # Build if missing
 if [[ ! -x "$BIN" ]]; then
@@ -53,6 +56,17 @@ print("{:.6e}".format(err))
 PY
 )
 
+# Assertions for smoke validation
+fail=0
+if (( abs_err > MAX_ABS_ERR )); then
+  echo "FAIL: abs_err $abs_err exceeds MAX_ABS_ERR $MAX_ABS_ERR" >&2
+  fail=1
+fi
+if (( elapsed_ms > MAX_MS )); then
+  echo "FAIL: elapsed_ms $elapsed_ms exceeds MAX_MS $MAX_MS" >&2
+  fail=1
+fi
+
 # Write CSV
 {
   echo "k,p_true,p_hat,abs_error,rel_error,elapsed_ms"
@@ -79,3 +93,4 @@ Notes:
 EOF
 
 echo "Wrote $CSV and $MD"
+exit $fail

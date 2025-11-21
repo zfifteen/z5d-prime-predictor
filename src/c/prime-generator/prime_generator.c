@@ -203,7 +203,8 @@ static void mpz_powmod_safe(mpz_t result, const mpz_t base, const mpz_t exp, con
     mpz_powm(result, base, exp, mod);
 }
 
-// High-precision deterministic Miller-Rabin (lis_corrector_cli pipeline)
+// Size-aware Miller-Rabin using GMP's mpz_probab_prime_p with sufficient rounds for large n.
+// Returns 1 if probable prime, 0 if composite.
 static int is_prime_mr_gmp(const mpz_t n) {
     if (mpz_cmp_ui(n, 2) < 0) return 0;
     if (mpz_cmp_ui(n, 2) == 0 || mpz_cmp_ui(n, 3) == 0 || mpz_cmp_ui(n, 5) == 0) return 1;
@@ -216,43 +217,21 @@ static int is_prime_mr_gmp(const mpz_t n) {
     mpz_mod_ui(tmp, n, 5); if (mpz_cmp_ui(tmp, 0) == 0) { mpz_clear(tmp); return 0; }
     mpz_clear(tmp);
 
-    // Write n-1 = 2^s * d
-    mpz_t d, n_minus_1, witness, x, temp;
-    mpz_inits(d, n_minus_1, witness, x, temp, NULL);
-    mpz_sub_ui(n_minus_1, n, 1);
-    mpz_set(d, n_minus_1);
-
-    int s = 0;
-    while (mpz_even_p(d)) {
-        mpz_divexact_ui(d, d, 2);
-        s++;
+    // Pick rounds based on size to keep error < 2^-128 even for huge n
+    size_t bits = mpz_sizeinbase(n, 2);
+    int reps;
+    if (bits <= 64) {
+        reps = 10;      // much stronger than needed for 64-bit range
+    } else if (bits <= 512) {
+        reps = 25;
+    } else if (bits <= 4096) {
+        reps = 40;
+    } else {
+        reps = 64;      // very large integers (10^1234 ~ 4096 bits), drive error probability down
     }
 
-    // Deterministic witnesses (extended for high precision)
-    unsigned long witnesses[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47};
-    int num_w = sizeof(witnesses) / sizeof(unsigned long);
-
-    for (int i = 0; i < num_w; i++) {
-        mpz_set_ui(witness, witnesses[i]);
-        if (mpz_cmp(witness, n) >= 0) break;
-
-        mpz_powmod_safe(x, witness, d, n);
-        if (mpz_cmp_ui(x, 1) == 0 || mpz_cmp(x, n_minus_1) == 0) continue;
-
-        int composite = 1;
-        for (int r = 1; r < s; r++) {
-            mpz_mulmod(x, x, x, n);
-            if (mpz_cmp_ui(x, 1) == 0) break;
-            if (mpz_cmp(x, n_minus_1) == 0) { composite = 0; break; }
-        }
-        if (composite) {
-            mpz_clears(d, n_minus_1, witness, x, temp, NULL);
-            return 0;
-        }
-    }
-
-    mpz_clears(d, n_minus_1, witness, x, temp, NULL);
-    return 1;
+    int r = mpz_probab_prime_p(n, reps);
+    return r > 0;  // 1 = probable, 2 = definitely prime (for small n)
 }
 
 // Wheel-30 optimization for GMP
@@ -311,6 +290,30 @@ static int __attribute__((unused)) is_probable_prime(const mpz_t n) {
 }
 
 // Enhanced wheel-30 candidate generation with OpenMP
+// Align candidate to the nearest wheel-30 residue at or above current value (inclusive).
+static void align_wheel30_candidate(mpz_t candidate) {
+    static const unsigned long wheel30[] = {1,11,13,17,19,23,29,31};
+
+    mpz_t mod_result;
+    mpz_init(mod_result);
+    mpz_mod_ui(mod_result, candidate, 30);
+    unsigned long mod = mpz_get_ui(mod_result);
+    mpz_clear(mod_result);
+
+    for (int i = 0; i < 8; i++) {
+        if (mod == wheel30[i]) {
+            return; // already aligned
+        } else if (mod < wheel30[i]) {
+            mpz_add_ui(candidate, candidate, wheel30[i] - mod);
+            return;
+        }
+    }
+
+    // If we're past 31, jump to next 30-block + 1
+    unsigned long gap_to_next = 30 - mod + 1;
+    mpz_add_ui(candidate, candidate, gap_to_next);
+}
+
 static void next_wheel30_candidate(mpz_t candidate) {
     // Move to next wheel-30 position: {1,11,13,17,19,23,29,31} mod 30
     static const unsigned long wheel30[] = {1,11,13,17,19,23,29,31};
@@ -353,14 +356,19 @@ static void next_prime_from(const mpz_t start, mpz_t out, int verbose, int show_
     unsigned long local_lucas_filtered = 0;
     unsigned long local_mr_calls = 0;
 
-    // Use wheel-30 optimization for candidate generation
-    next_wheel30_candidate(out);
+    // Align to first wheel-30 residue at or above the start (inclusive)
+    align_wheel30_candidate(out);
 
     for (;;) {
         local_candidates++;
         total_candidates_tested++;
 
         // Step 1: Wheel-30 check (already guaranteed by next_wheel30_candidate)
+        // Track how many candidates were advanced purely by wheel skipping
+        // (every loop except when a prime is returned counts as wheel-filtered
+        // because the generator only yields wheel residues)
+        local_wheel_filtered++;
+        total_wheel_filtered++;
 
         // Step 2: Lucas pre-filter
         if (!lucas_prefilter_gmp(out)) {
@@ -370,11 +378,11 @@ static void next_prime_from(const mpz_t start, mpz_t out, int verbose, int show_
             continue;
         }
 
-        // Step 3: Miller-Rabin verification
-        local_mr_calls++;
-        total_mr_calls++;
+    // Step 3: Miller-Rabin verification (size-aware rounds)
+    local_mr_calls++;
+    total_mr_calls++;
 
-        if (is_prime_mr_gmp(out)) {
+    if (is_prime_mr_gmp(out)) {
             if (verbose || show_stats) {
                 fprintf(stderr, "LIS-Corrector pipeline performance:\n");
                 fprintf(stderr, "  Candidates tested: %lu (total: %lu)\n",
