@@ -1,0 +1,7 @@
+.idea/
+.snapshots/
+*.iml
+src/c/z5d-predictor-c/bin/
+src/c/z5d-predictor-c/build/
+src/c/z5d-mersenne/bin/
+
