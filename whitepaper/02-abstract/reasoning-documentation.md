@@ -39,7 +39,7 @@
 - Still well within 250-word maximum
 - Matches complexity of the Z5D framework
 
-**Actual Result:** 242 words (optimal)
+**Actual Result:** 207 words (optimal)
 
 ---
 
