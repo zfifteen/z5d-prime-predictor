@@ -4,6 +4,11 @@ artifacts/z5d/*.jsonl
 artifacts/geofac/*.jsonl
 artifacts/alignment/*/overlap_report.json
 
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
 # Keep directory structure
 !artifacts/seedsets/.gitkeep
 !artifacts/z5d/.gitkeep
