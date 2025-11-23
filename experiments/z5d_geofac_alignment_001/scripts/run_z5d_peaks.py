@@ -17,12 +17,17 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 import numpy as np
+try:
+    import sympy
+    SYMPY_AVAILABLE = True
+except ImportError:
+    SYMPY_AVAILABLE = False
 
 
-def read_seed_csv(seed_path: Path) -> tuple[List[int], np.ndarray, Dict[str, Any]]:
+def read_seed_csv(seed_path: Path) -> Tuple[List[int], np.ndarray, Dict[str, Any]]:
     """
     Read QMC seed CSV file.
     
@@ -92,7 +97,8 @@ def run_z5d_predictor_mock(k: int) -> Dict[str, Any]:
     Returns:
         Dictionary with prediction results
     """
-    import sympy
+    if not SYMPY_AVAILABLE:
+        raise ImportError("sympy is required for mock predictor")
     
     # Use Riemann R function approximation for nth prime
     # This is a simplified version of what z5d does

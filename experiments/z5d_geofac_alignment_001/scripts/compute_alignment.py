@@ -17,6 +17,7 @@ Usage:
 """
 import argparse
 import json
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -175,7 +176,6 @@ def bootstrap_jaccard(z5d_results: List[Dict[str, Any]],
 
 def get_git_sha(repo_path: Path) -> str:
     """Get current git commit SHA."""
-    import subprocess
     try:
         result = subprocess.run(
             ['git', 'rev-parse', 'HEAD'],
