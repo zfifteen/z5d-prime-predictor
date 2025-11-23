@@ -15,7 +15,7 @@ Usage:
 import argparse
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any
 
@@ -389,7 +389,7 @@ analysis recommended at K/2 and 2K to verify stability.
 ---
 
 **Experiment completed**: {report['timestamp_utc']}  
-**Report generated**: {datetime.utcnow().isoformat()}Z
+**Report generated**: {datetime.now(timezone.utc).isoformat()}Z
 """
 
 

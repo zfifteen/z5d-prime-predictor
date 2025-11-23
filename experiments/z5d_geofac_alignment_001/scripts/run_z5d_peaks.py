@@ -236,8 +236,8 @@ def assign_bins(results: List[Dict[str, Any]], num_bins: int = 1000) -> List[Dic
     if not valid_results:
         return results
     
-    # Get prime range
-    primes = np.array([r['predicted_prime'] for r in valid_results])
+    # Get prime range - convert to float to handle large integers
+    primes = np.array([float(r['predicted_prime']) for r in valid_results], dtype=np.float64)
     log_primes = np.log10(primes)
     
     # Create bins
@@ -248,7 +248,7 @@ def assign_bins(results: List[Dict[str, Any]], num_bins: int = 1000) -> List[Dic
     # Assign bin IDs
     for r in valid_results:
         if 'predicted_prime' in r:
-            log_p = np.log10(r['predicted_prime'])
+            log_p = np.log10(float(r['predicted_prime']))
             bin_id = np.searchsorted(bins[:-1], log_p, side='right') - 1
             bin_id = max(0, min(num_bins - 1, bin_id))
             r['bin_id'] = int(bin_id)
@@ -267,14 +267,33 @@ def write_jsonl(results: List[Dict[str, Any]], output_path: Path, metadata: Dict
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
+    # Helper to convert numpy types to Python types
+    def convert_to_serializable(obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+    
+    def make_serializable(d):
+        """Recursively convert numpy types in dictionary."""
+        if isinstance(d, dict):
+            return {k: make_serializable(v) for k, v in d.items()}
+        elif isinstance(d, list):
+            return [make_serializable(item) for item in d]
+        else:
+            return convert_to_serializable(d)
+    
     with output_path.open('w') as f:
         # Write metadata as first line
-        meta_line = {'_metadata': metadata}
+        meta_line = {'_metadata': make_serializable(metadata)}
         f.write(json.dumps(meta_line) + '\n')
         
         # Write results
         for result in results:
-            f.write(json.dumps(result) + '\n')
+            f.write(json.dumps(make_serializable(result)) + '\n')
 
 
 def main():

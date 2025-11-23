@@ -256,14 +256,33 @@ def write_jsonl(results: List[Dict[str, Any]], output_path: Path, metadata: Dict
     """Write results to JSONL file."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
+    # Helper to convert numpy types to Python types
+    def convert_to_serializable(obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+    
+    def make_serializable(d):
+        """Recursively convert numpy types in dictionary."""
+        if isinstance(d, dict):
+            return {k: make_serializable(v) for k, v in d.items()}
+        elif isinstance(d, list):
+            return [make_serializable(item) for item in d]
+        else:
+            return convert_to_serializable(d)
+    
     with output_path.open('w') as f:
         # Write metadata
-        meta_line = {'_metadata': metadata}
+        meta_line = {'_metadata': make_serializable(metadata)}
         f.write(json.dumps(meta_line) + '\n')
         
         # Write results
         for result in results:
-            f.write(json.dumps(result) + '\n')
+            f.write(json.dumps(make_serializable(result)) + '\n')
 
 
 def main():

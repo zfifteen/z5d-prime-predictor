@@ -1,0 +1,11 @@
+# Experiment artifacts - regenerate with run_experiment.py
+artifacts/seedsets/*.csv
+artifacts/z5d/*.jsonl
+artifacts/geofac/*.jsonl
+artifacts/alignment/*/overlap_report.json
+
+# Keep directory structure
+!artifacts/seedsets/.gitkeep
+!artifacts/z5d/.gitkeep
+!artifacts/geofac/.gitkeep
+!artifacts/alignment/.gitkeep
