@@ -189,7 +189,10 @@ function addressToBytes(address: string): Buffer {
   for (const char of address) {
     const index = ALPHABET.indexOf(char);
     if (index < 0) {
-      // Skip invalid characters, hash the address instead
+      // Invalid Base58 character detected - use hash fallback for analysis
+      // This can happen with non-standard address formats or corrupted data
+      // The fallback maintains consistent analysis behavior
+      console.warn(`Invalid Base58 character '${char}' in address: ${address.substring(0, 10)}...`);
       return createHash('sha256').update(address).digest();
     }
     value = value * BigInt(58) + BigInt(index);

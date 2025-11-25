@@ -113,9 +113,18 @@ export class ZGhostWallet {
   }
 
   /**
-   * Create a wallet from a mnemonic phrase (BIP39 compatible)
-   * Note: This is a simplified implementation. For production use,
-   * proper BIP39 mnemonic handling should be used.
+   * Create a wallet from a mnemonic phrase
+   * 
+   * IMPORTANT: This is a DEMONSTRATION implementation that does NOT follow BIP39.
+   * Seeds derived here will NOT be compatible with standard Bitcoin wallets.
+   * 
+   * For production use, integrate a proper BIP39 library (e.g., bip39 npm package)
+   * and use the following approach:
+   *   const bip39 = require('bip39');
+   *   const seed = bip39.mnemonicToSeedSync(mnemonic, passphrase).subarray(0, 32);
+   * 
+   * This implementation uses iterative SHA512 hashing to derive a deterministic
+   * seed from the mnemonic for demonstration purposes only.
    * 
    * @param mnemonic - Space-separated mnemonic words
    * @param passphrase - Optional passphrase
@@ -127,13 +136,13 @@ export class ZGhostWallet {
     passphrase: string = '',
     config: ZGhostWalletConfig = {}
   ): ZGhostWallet {
-    // Simple PBKDF2-like derivation (simplified for this implementation)
-    // In production, use proper BIP39 implementation
+    // DEMONSTRATION: Simplified derivation - NOT BIP39 compatible
+    // For production, use proper BIP39: bip39.mnemonicToSeedSync(mnemonic, passphrase)
     const salt = `mnemonic${passphrase}`;
     const mnemonicBuffer = Buffer.from(mnemonic.normalize('NFKD'), 'utf8');
     const saltBuffer = Buffer.from(salt.normalize('NFKD'), 'utf8');
     
-    // Iterative hashing to derive seed
+    // Iterative hashing to derive seed (similar to PBKDF2 but simplified)
     let derived = createHash('sha512').update(mnemonicBuffer).update(saltBuffer).digest();
     for (let i = 0; i < 2048; i++) {
       derived = createHash('sha512').update(derived).update(saltBuffer).digest();

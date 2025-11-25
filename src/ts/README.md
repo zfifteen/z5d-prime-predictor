@@ -6,6 +6,8 @@ Client-Side Ephemeral Address Generation using Z5D Prime Prediction
 
 Z-Ghost replaces traditional BIP32/44 HD wallet derivation with geodesic prime prediction paths that are deterministic for the user but computationally infeasible to link externally. This provides enhanced privacy for Bitcoin transactions.
 
+> **IMPORTANT**: This is a demonstration implementation. For production use with real Bitcoin transactions, integrate proper cryptographic libraries (secp256k1 for elliptic curve operations, RIPEMD160 for address hashing, and BIP39 for mnemonic handling). See the "Production Considerations" section below.
+
 ## Mathematical Foundation
 
 The Z-Ghost Protocol uses the Z5D Prime Predictor framework, which is based on the Riemann prime-counting function R(x):
@@ -158,6 +160,30 @@ The Z-Ghost Protocol significantly exceeds the performance requirements:
 - `static quickScore(addresses: string[], privateKeys: Buffer[]): number`
 - `static generateReport(result: PrivacyScoreResult): string`
 - `static get bip32Baseline(): { entropyScore, distanceScore, distributionScore, totalScore }`
+
+## Production Considerations
+
+This demonstration implementation uses simplified cryptographic operations for educational purposes. For production deployment with real Bitcoin transactions:
+
+1. **Elliptic Curve Operations**: Replace SHA256-based public key derivation with proper secp256k1:
+   ```typescript
+   import * as secp256k1 from 'tiny-secp256k1';
+   const publicKey = secp256k1.pointFromScalar(privateKey, true);
+   ```
+
+2. **Address Hashing**: Use proper RIPEMD160 instead of truncated SHA256:
+   ```typescript
+   import { ripemd160 } from '@noble/hashes/ripemd160';
+   const hash160 = ripemd160(sha256(publicKey));
+   ```
+
+3. **Mnemonic Handling**: Use BIP39 standard for seed derivation:
+   ```typescript
+   import * as bip39 from 'bip39';
+   const seed = bip39.mnemonicToSeedSync(mnemonic, passphrase).subarray(0, 32);
+   ```
+
+The Z5D geodesic path derivation algorithm itself remains unchanged - only the Bitcoin-specific cryptographic primitives need updating for production use.
 
 ## License
 

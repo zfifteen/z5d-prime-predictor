@@ -9,6 +9,17 @@
  * for geodesic path computation. This creates a deterministic sequence that is
  * computationally infeasible to reverse-engineer without the master seed.
  * 
+ * IMPORTANT IMPLEMENTATION NOTE:
+ * This is a demonstration implementation that uses simplified cryptographic operations:
+ * - Public keys are derived using SHA256 instead of proper secp256k1 elliptic curve math
+ * - RIPEMD160 is simulated using truncated SHA256
+ * 
+ * For production use with real Bitcoin transactions, integrate proper secp256k1 libraries
+ * (such as tiny-secp256k1 or bitcoinjs-lib) for elliptic curve operations.
+ * 
+ * The Z5D geodesic path derivation and privacy scoring remain mathematically valid
+ * and demonstrate the protocol's approach to unlinkable address generation.
+ * 
  * In memory of Bill and Keonne. Math is not a crime.
  * 
  * MIT Licensed - No patent claims
@@ -17,8 +28,26 @@
 import { createHash } from 'crypto';
 
 /**
- * Möbius function μ(n) for the first 15 values (precomputed)
- * Used in the Riemann R(x) series calculation
+ * Möbius function μ(n) for n = 0 to 15 (precomputed)
+ * Used in the Riemann R(x) series calculation.
+ * 
+ * The Möbius function is defined as:
+ *   μ(1) = 1
+ *   μ(n) = (-1)^k if n is a product of k distinct primes
+ *   μ(n) = 0 if n has a squared prime factor
+ * 
+ * Index:  0  1  2  3  4  5  6  7  8  9  10  11  12  13  14  15
+ * Value:  0  1 -1 -1  0 -1  1 -1  0  0   1  -1   0  -1   1   1
+ * 
+ * Explanation:
+ *   μ(0) = 0 (undefined, placeholder)
+ *   μ(1) = 1 (empty product)
+ *   μ(2) = -1 (2 is prime)
+ *   μ(3) = -1 (3 is prime)
+ *   μ(4) = 0 (4 = 2² has squared factor)
+ *   μ(5) = -1 (5 is prime)
+ *   μ(6) = 1 (6 = 2×3, two distinct primes)
+ *   etc.
  */
 const MOBIUS: number[] = [0, 1, -1, -1, 0, -1, 1, -1, 0, 0, 1, -1, 0, -1, 1, 1];
 
@@ -38,6 +67,20 @@ const LI_SERIES_TERMS = 20;
  * K=5 provides good balance of accuracy and speed
  */
 const RIEMANN_K_TERMS = 5;
+
+/**
+ * Maximum prime index modulus for geodesic path computation
+ * This bounds the prime index to a computationally manageable range
+ * while maintaining sufficient entropy for the derivation.
+ */
+const PRIME_INDEX_MODULUS = 10000000;
+
+/**
+ * Minimum prime index offset for geodesic path computation
+ * Added to ensure we're always working with primes large enough
+ * to provide meaningful variation in the Z5D estimate.
+ */
+const PRIME_INDEX_OFFSET = 1000;
 
 /**
  * Configuration options for the Z-Ghost Address Generator
@@ -237,8 +280,9 @@ export function computeGeodesicPath(
     .update(indexBuffer)
     .digest();
   
-  // Extract prime index from first 8 bytes (modulo to reasonable range)
-  const primeIndex = Number(hmac1.readBigUInt64BE(0) % BigInt(10000000)) + 1000;
+  // Extract prime index from first 8 bytes, bounded to a manageable range
+  // while maintaining sufficient entropy for unique derivations
+  const primeIndex = Number(hmac1.readBigUInt64BE(0) % BigInt(PRIME_INDEX_MODULUS)) + PRIME_INDEX_OFFSET;
   
   // Compute Z5D prime estimate
   const K = config.riemannTerms ?? RIEMANN_K_TERMS;
@@ -333,17 +377,20 @@ export class ZGhostAddressGen {
   }
 
   /**
-   * Generate public key from private key using secp256k1
+   * Generate public key from private key
+   * 
+   * DEMONSTRATION IMPLEMENTATION:
+   * This uses SHA256 hashing instead of proper secp256k1 elliptic curve point multiplication.
+   * For production use with real Bitcoin transactions, replace with proper secp256k1 library.
+   * 
+   * The output maintains the compressed public key format (33 bytes) for protocol compatibility.
    * 
    * @param privateKey - 32-byte private key buffer
-   * @returns 33-byte compressed public key buffer
+   * @returns 33-byte compressed public key buffer (demonstration format)
    */
   generatePublicKey(privateKey: Buffer): Buffer {
-    // Manual secp256k1 point multiplication (simplified for client-side only)
-    // In production, use tiny-secp256k1 or bitcoinjs-lib
-    
-    // We'll use a cryptographic hash as a deterministic transformation
-    // This maintains the security properties without external dependencies
+    // DEMONSTRATION: Using hash-based derivation instead of secp256k1
+    // For production, use: const publicKey = secp256k1.pointFromScalar(privateKey, true)
     const hash1 = createHash('sha256').update(privateKey).digest();
     const hash2 = createHash('sha256').update(hash1).update(privateKey).digest();
     
@@ -359,15 +406,19 @@ export class ZGhostAddressGen {
   /**
    * Generate Bitcoin address from public key
    * 
+   * DEMONSTRATION IMPLEMENTATION:
+   * Uses SHA256 truncated to 20 bytes instead of proper RIPEMD160.
+   * For production use with real Bitcoin transactions, use proper RIPEMD160.
+   * 
    * @param publicKey - 33-byte compressed public key
-   * @returns Bitcoin address string (P2PKH format)
+   * @returns Bitcoin address string (P2PKH-style format)
    */
   generateAddress(publicKey: Buffer): string {
     // SHA256 of public key
     const sha256Hash = createHash('sha256').update(publicKey).digest();
     
-    // RIPEMD160 of SHA256 - simulate with SHA256 truncated (since no ripemd160 in node:crypto by default)
-    // In production, use bitcoinjs-lib for proper RIPEMD160
+    // DEMONSTRATION: Using SHA256 truncated to 20 bytes instead of RIPEMD160
+    // For production, use: const hash160 = ripemd160(sha256Hash)
     const hash160 = createHash('sha256')
       .update(sha256Hash)
       .digest()
