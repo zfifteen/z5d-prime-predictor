@@ -37,7 +37,8 @@ except ImportError:
 
 
 # Mathematical constants from z_framework_params.h
-PHI = 1.61803398874989  # Golden ratio φ
+# Golden ratio φ = (1 + √5) / 2 with high precision
+PHI = (1 + 5 ** 0.5) / 2
 E_SQUARED = 7.38905609893065  # e²
 STADLMANN_THETA = 0.525  # Stadlmann's θ approximation
 
@@ -92,8 +93,8 @@ def theta_prime_error_mock(theta: np.ndarray, k: np.ndarray, log10n: float) -> n
     )
     
     # Add small noise for realism
-    rng = np.random.RandomState(42 + int(log10n))
-    noise = 0.005 * rng.randn(*theta.shape)
+    rng = np.random.default_rng(42 + int(log10n))
+    noise = 0.005 * rng.standard_normal(theta.shape)
     
     # Ensure positive error values
     error = np.abs(error + noise)
@@ -274,7 +275,7 @@ def save_surface_data(
             'stadlmann_theta': STADLMANN_THETA,
             'phi': PHI,
             'timestamp_utc': datetime.now(timezone.utc).isoformat(),
-            'error_model': 'mock' if metadata is None or metadata.get('error_model') is None else metadata.get('error_model')
+            'error_model': metadata.get('error_model', 'mock') if metadata else 'mock'
         },
         'theta': theta_grid.tolist(),
         'k': k_grid.tolist(),

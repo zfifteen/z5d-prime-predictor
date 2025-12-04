@@ -49,7 +49,7 @@ class ContourExperimentRunner:
         print(f"{'='*60}\n")
         
         try:
-            result = subprocess.run(cmd, check=True, text=True)
+            subprocess.run(cmd, check=True, text=True)
             print(f"\n✓ {description} completed successfully")
             return True
         except subprocess.CalledProcessError as e:
