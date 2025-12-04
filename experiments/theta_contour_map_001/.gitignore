@@ -1,0 +1,17 @@
+# Experiment artifacts - regenerate with run_contour_experiment.py
+artifacts/contour_data/*.json
+artifacts/plots/*.png
+artifacts/plots/*.pdf
+artifacts/plots/*.json
+
+# Generated documentation
+docs/EXPERIMENT_SUMMARY.md
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Keep directory structure
+!artifacts/contour_data/.gitkeep
+!artifacts/plots/.gitkeep
