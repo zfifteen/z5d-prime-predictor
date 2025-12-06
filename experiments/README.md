@@ -18,6 +18,20 @@ python run_experiment.py --samples 1000 --max-process 500 --test
 
 See [z5d_geofac_alignment_001/README.md](z5d_geofac_alignment_001/README.md) for details.
 
+### theta_contour_map_001
+
+**Status**: ⏸ READY  
+**Purpose**: Visualize θ′(n,k) error landscape near Stadlmann's θ≈0.525 to identify φ-related harmonics  
+**Goal**: Spot periodic bias around golden-ratio harmonics for calibration
+
+**Quick Start**:
+```bash
+cd theta_contour_map_001/scripts
+python run_contour_experiment.py --test
+```
+
+See [theta_contour_map_001/README.md](theta_contour_map_001/README.md) for details.
+
 ## Experiment Guidelines
 
 All experiments in this directory should follow these standards:
