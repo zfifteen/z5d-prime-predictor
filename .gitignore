@@ -6,3 +6,15 @@ src/c/z5d-predictor-c/build/
 src/c/z5d-mersenne/bin/
 src/c/prime-generator/bin/
 prime_generator_output.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
