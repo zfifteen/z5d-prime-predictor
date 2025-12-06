@@ -62,11 +62,11 @@ class TestMobius(unittest.TestCase):
 
     def test_mobius_beyond_table(self):
         """Test Möbius function for values beyond precomputed table."""
-        # μ(17) = -1 (prime)
+        # μ(17) = -1 (prime, single distinct prime factor)
         self.assertEqual(mobius(17), -1)
-        # μ(30) = -1 (30 = 2*3*5, three distinct primes)
+        # μ(30) = -1 (30 = 2*3*5, three distinct primes, (-1)^3 = -1)
         self.assertEqual(mobius(30), -1)
-        # μ(36) = 0 (36 = 2^2 * 3^2)
+        # μ(36) = 0 (36 = 2^2 * 3^2, has squared prime factors)
         self.assertEqual(mobius(36), 0)
 
     def test_mobius_invalid_input(self):
