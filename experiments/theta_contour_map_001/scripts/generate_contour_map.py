@@ -231,10 +231,15 @@ def compute_error_surface(
         2D array of error values
     """
         
-        if error_func is None:
-            error_func = theta_prime_error_real
+            
         
-        return error_func(theta_grid, k_grid, log10n)
+            if error_func is None:
+        
+                error_func = theta_prime_error_real
+        
+            
+        
+            return error_func(theta_grid, k_grid, log10n)
 
 
 def plot_contour_map(
