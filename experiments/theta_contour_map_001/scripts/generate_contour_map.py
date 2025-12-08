@@ -30,7 +30,6 @@ try:
     import matplotlib
     matplotlib.use('Agg')  # Non-interactive backend for server environments
     import matplotlib.pyplot as plt
-    from matplotlib import cm
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
@@ -38,8 +37,7 @@ except ImportError:
 
 # Mathematical constants from z_framework_params.h
 # Golden ratio φ = (1 + √5) / 2 with high precision
-PHI = (1 + 5 ** 0.5) / 2
-E_SQUARED = 7.38905609893065  # e²
+PHI = (1 + np.sqrt(5)) / 2
 STADLMANN_THETA = 0.525  # Stadlmann's θ approximation
 
 
@@ -193,7 +191,7 @@ def plot_contour_map(
     )
     
     # Add contour lines for clarity
-    contour_lines = ax.contour(
+    ax.contour(
         theta_grid, k_grid, error_surface,
         levels=levels,
         colors='white',
@@ -202,7 +200,7 @@ def plot_contour_map(
     )
     
     # Colorbar
-    cbar = fig.colorbar(contour, ax=ax, label='θ′(n,k) Error')
+    fig.colorbar(contour, ax=ax, label='θ′(n,k) Error')
     
     # Reference lines for φ-related harmonics
     if show_phi_lines:
@@ -241,7 +239,7 @@ def plot_contour_map(
     plt.savefig(output_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
     
-    print(f"Saved contour plot to {output_path}", file=sys.stderr)
+    print(f"Saved contour plot to {output_path}")
 
 
 def save_surface_data(
@@ -297,7 +295,7 @@ def save_surface_data(
     with output_path.open('w') as f:
         json.dump(data, f, indent=2)
     
-    print(f"Saved surface data to {output_path}", file=sys.stderr)
+    print(f"Saved surface data to {output_path}")
 
 
 def generate_multi_scale_summary(
@@ -441,7 +439,7 @@ def main():
         base_dir = args.output.parent
         
         for log10n in log10n_values:
-            print(f"\nProcessing log₁₀(n) = {log10n}...", file=sys.stderr)
+            print(f"\nProcessing log₁₀(n) = {log10n}...")
             
             theta_grid, k_grid = generate_theta_k_grid(
                 theta_center=args.theta_center,
@@ -470,11 +468,11 @@ def main():
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         with summary_path.open('w') as f:
             json.dump(summary, f, indent=2)
-        print(f"\nSaved multi-scale summary to {summary_path}", file=sys.stderr)
+        print(f"\nSaved multi-scale summary to {summary_path}")
         
     else:
         # Single scale
-        print(f"Generating error surface for log₁₀(n) = {args.log10n}...", file=sys.stderr)
+        print(f"Generating error surface for log₁₀(n) = {args.log10n}...")
         
         theta_grid, k_grid = generate_theta_k_grid(
             theta_center=args.theta_center,
@@ -487,11 +485,11 @@ def main():
         
         error_surface = compute_error_surface(theta_grid, k_grid, args.log10n)
         
-        print(f"Error surface statistics:", file=sys.stderr)
-        print(f"  Min: {error_surface.min():.6f}", file=sys.stderr)
-        print(f"  Max: {error_surface.max():.6f}", file=sys.stderr)
-        print(f"  Mean: {error_surface.mean():.6f}", file=sys.stderr)
-        print(f"  Std: {error_surface.std():.6f}", file=sys.stderr)
+        print(f"Error surface statistics:")
+        print(f"  Min: {error_surface.min():.6f}")
+        print(f"  Max: {error_surface.max():.6f}")
+        print(f"  Mean: {error_surface.mean():.6f}")
+        print(f"  Std: {error_surface.std():.6f}")
         
         if args.save_data:
             save_surface_data(
