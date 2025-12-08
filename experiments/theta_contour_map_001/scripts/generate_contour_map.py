@@ -40,6 +40,28 @@ except ImportError:
 PHI = (1 + np.sqrt(5)) / 2
 STADLMANN_THETA = 0.525  # Stadlmann's θ approximation
 
+# Ground truth primes for specific powers of 10
+KNOWN_PRIMES = {
+    10**1: 29,
+    10**2: 541,
+    10**3: 7919,
+    10**4: 104729,
+    10**5: 1299709,
+    10**6: 15485863,
+    10**7: 179424673,
+    10**8: 2038074743,
+    10**9: 22801763489,
+    10**10: 252097800623,
+    10**11: 2760727302517,
+    10**12: 29996224275833,
+    10**13: 323780508946331,
+    10**14: 3475385758524527,
+    10**15: 37124508045065437,
+    10**16: 394906913903735329,
+    10**17: 4185296581467695669,
+    10**18: 44211790234832169331,
+}
+
 
 def theta_prime_error_mock(theta: np.ndarray, k: np.ndarray, log10n: float) -> np.ndarray:
     """
@@ -100,6 +122,64 @@ def theta_prime_error_mock(theta: np.ndarray, k: np.ndarray, log10n: float) -> n
     return error
 
 
+def vectorized_z5d_prime(n: float, theta: np.ndarray) -> np.ndarray:
+    """
+    Vectorized numpy implementation of the z5d prime predictor.
+    'n' is a scalar (e.g., 10**log10n), 'theta' is a numpy array.
+    
+    P_n ≈ n (ln n + ln ln n - 1 + (ln ln n - 2) / ln n - (ln ln n)^2 / (2 (ln n)^2) + ... )
+    For simplicity, using PNT 2nd order approximation plus theta adjustment.
+    """
+    log_n = np.log(n)
+    log_log_n = np.log(log_n)
+    
+    # PNT 2nd order (simplified for primary terms)
+    # This is a common approximation, not the full Riemann R function.
+    # The form used in repro_z5d_origin.py is a simplified PNT with a theta adjustment.
+    # We will use the formula from repro_z5d_origin.py.
+    
+    base_prediction = n * (log_n + log_log_n - 1)
+    
+    # Apply theta adjustment as observed in z5d approaches
+    # This simplified model uses theta directly as a coefficient to an adjustment term.
+    adjustment = theta * (n / log_n) # This is a conceptual integration of theta
+    
+    return base_prediction + adjustment
+
+
+def theta_prime_error_real(theta: np.ndarray, k: np.ndarray, log10n: float) -> np.ndarray:
+    """
+    Real error model based on vectorized_z5d_prime using known ground truth primes.
+    
+    Args:
+        theta: 2D array of θ values (grid)
+        k: 2D array of k values (grid) - NOTE: This parameter is ignored by z5d.
+        log10n: log₁₀(n) scale parameter
+    
+    Returns:
+        2D array of absolute error values (predicted - actual)
+    """
+    n_val = 10**log10n
+    
+    actual_prime = KNOWN_PRIMES.get(int(n_val))
+    if actual_prime is None:
+        # Fallback to float key if int not found (for intermediate log10n values perhaps)
+        actual_prime = KNOWN_PRIMES.get(n_val)
+
+    if actual_prime is None:
+        raise ValueError(f"Ground truth prime for n={n_val} (log₁₀n={log10n}) is not available in KNOWN_PRIMES.")
+
+    # Reshape theta_grid to match expected input for vectorized_z5d_prime
+    # We expect theta to be a 2D array, and vectorized_z5d_prime expects an array for theta
+    # where n is a scalar. So we pass n and the theta_grid directly.
+    predicted_primes = vectorized_z5d_prime(n_val, theta)
+    
+    # Return the absolute error. We want to minimize this.
+    error = np.abs(predicted_primes - actual_prime)
+    
+    return error
+
+
 def generate_theta_k_grid(
     theta_center: float = STADLMANN_THETA,
     theta_delta: float = 0.06,
@@ -150,10 +230,11 @@ def compute_error_surface(
     Returns:
         2D array of error values
     """
-    if error_func is None:
-        error_func = theta_prime_error_mock
-    
-    return error_func(theta_grid, k_grid, log10n)
+        
+        if error_func is None:
+            error_func = theta_prime_error_real
+        
+        return error_func(theta_grid, k_grid, log10n)
 
 
 def plot_contour_map(
