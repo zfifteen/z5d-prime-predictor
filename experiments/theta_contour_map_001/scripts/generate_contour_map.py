@@ -182,7 +182,7 @@ def theta_prime_error_real(theta: np.ndarray, k: np.ndarray, log10n: float) -> n
 
     # Combine base error with modulation. Ensure error remains non-negative.
     # We'll scale the k_modulation to be a small additive component.
-    combined_error = base_error + 0.1 * np.abs(k_modulation)
+    combined_error = base_error + np.abs(k_modulation)
 
     return combined_error
 
