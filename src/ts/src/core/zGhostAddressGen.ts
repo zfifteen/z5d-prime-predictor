@@ -86,9 +86,9 @@ const PRIME_INDEX_OFFSET = 1000;
  * Configuration options for the Z-Ghost Address Generator
  */
 export interface ZGhostAddressGenConfig {
-  /** Number of series terms for Riemann R(x) calculation (default: 10) */
+  /** Number of series terms for Riemann R(x) calculation (default: 5) */
   riemannTerms?: number;
-  /** Number of series terms for logarithmic integral (default: 100) */
+  /** Number of series terms for logarithmic integral (default: 20) */
   liTerms?: number;
   /** Enable collision detection (default: true) */
   collisionDetection?: boolean;
