@@ -11,3 +11,14 @@ prime_generator_output.txt
 src/ts/node_modules/
 src/ts/dist/
 src/ts/coverage/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
