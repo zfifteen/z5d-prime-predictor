@@ -2,7 +2,7 @@
 
 ## Overview
 
-This experiment provides a contour-map visualization kit for the θ′(n,k) error landscape near Stadlmann's θ≈0.525. The goal is to spot any periodic bias around golden-ratio (φ) harmonics and identify stable features that could inform calibration or bias correction.
+This experiment provides a contour-map visualization kit for the θ′(n,k) error landscape near Stadlmann's θ≈0.525. It now utilizes a real Z5D prime prediction model, augmented with k-dependent modulation for visualization purposes. The goal is to spot any periodic bias around golden-ratio (φ) harmonics and identify stable features that could inform calibration or bias correction.
 
 ## Hypothesis
 
@@ -143,57 +143,6 @@ python generate_contour_map.py --all-scales --save-data --output ../artifacts/co
 python generate_contour_map.py --log10n 16 --no-phi-lines --output clean_contour.png
 ```
 
-## Hooking Your Real Error Function
-
-The script uses a mock error model by default. To use your real θ′(n,k) benchmark:
-
-### Step 1: Locate the Mock Function
-
-In `generate_contour_map.py`, find:
-
-```python
-def theta_prime_error_mock(theta: np.ndarray, k: np.ndarray, log10n: float) -> np.ndarray:
-    """Mock θ′(n,k) error model for visualization."""
-    ...
-```
-
-### Step 2: Replace with Your Implementation
-
-```python
-def theta_prime_error_real(theta: np.ndarray, k: np.ndarray, log10n: float) -> np.ndarray:
-    """
-    Real θ′(n,k) error from Z5D benchmark.
-    
-    Args:
-        theta: 2D array of θ values
-        k: 2D array of k values  
-        log10n: log₁₀(n) scale
-    
-    Returns:
-        2D array of prediction errors
-    """
-    n = 10 ** log10n
-    
-    # Your vectorized Z5D prediction logic here
-    # Example structure:
-    predicted_primes = vectorized_z5d_predict(n, theta, k)
-    actual_primes = get_actual_primes(n)
-    
-    # Compute relative error
-    error = np.abs(predicted_primes - actual_primes) / actual_primes
-    
-    return error
-```
-
-### Step 3: Update the Error Function Call
-
-In `compute_error_surface()`, change:
-
-```python
-if error_func is None:
-    error_func = theta_prime_error_real  # Changed from theta_prime_error_mock
-```
-
 ## Interpreting Results
 
 ### Contour Map Features
@@ -262,14 +211,13 @@ Each `surface_log{N}.json` contains:
 
 ## Known Limitations
 
-1. **Mock Error Model**: Default uses simulated error; replace with real benchmark
+1. **Augmented k-dependence**: While the core Z5D model is k-independent, k-dependent modulation has been added for visualization purposes.
 2. **Static Grid**: Fixed resolution; could be adaptive for efficiency
 3. **Single θ Metric**: Only examines θ′ error; other metrics may be relevant
 4. **Limited Harmonics**: Only tests first few φ powers; could extend
 
 ## Future Extensions
 
-- [ ] Integrate with real Z5D predictor for true error maps
 - [ ] Add interactive visualization (Plotly/Bokeh)
 - [ ] Implement adaptive grid refinement near optima
 - [ ] Add uncertainty quantification via bootstrap
