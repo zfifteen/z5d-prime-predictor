@@ -7,6 +7,10 @@ src/c/z5d-mersenne/bin/
 src/c/prime-generator/bin/
 prime_generator_output.txt
 
+# TypeScript/Node.js
+src/ts/node_modules/
+src/ts/dist/
+src/ts/coverage/
 # Python
 __pycache__/
 *.pyc
