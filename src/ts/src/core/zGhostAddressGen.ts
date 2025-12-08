@@ -299,7 +299,7 @@ export function computeGeodesicPath(
   
   // Combine both halves into full geodesic path
   const pathHigh = hmac2.subarray(0, 32);
-  const pathLow = hmac2.subarray(32);
+  const pathLow = hmac2.subarray(32, 64);
   
   // XOR the two halves for final path value
   const pathBytes = Buffer.alloc(32);
