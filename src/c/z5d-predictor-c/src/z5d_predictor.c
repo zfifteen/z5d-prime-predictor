@@ -155,76 +155,20 @@ static void z5d_predict_mpfr(mpfr_t res, const mpfr_t k_mp, mpfr_prec_t prec) {
     mpfr_clears(ln_k, ln_ln_k, pnt, ln_pnt, d_term, e_term, tmp, correction, (mpfr_ptr)0);
 }
 
-/* --------- Refinement: guaranteed prime search around prediction --------- */
+/* --------- Refinement: forward probable prime (GMP) --------- */
 static void refine_to_prime(const mpfr_t x0, const mpfr_t k_mp, mpz_t out_prime) {
-    (void)k_mp; /* currently unused but kept for future geodesic bases */
+    (void)k_mp; /* currently unused */
 
     mpz_t candidate;
     mpz_init(candidate);
     mpfr_get_z(candidate, x0, MPFR_RNDN);
+    if (mpz_cmp_ui(candidate, 2) < 0) mpz_set_ui(candidate, 2);
 
-    if (mpz_cmp_ui(candidate, 3) < 0) mpz_set_ui(candidate, 3);
-    if (mpz_even_p(candidate)) mpz_add_ui(candidate, candidate, 1);
-    snap_to_6k_pm1(candidate, +1);
-
-    /* Quick path: test prediction itself */
-    if (!divisible_by_small_prime(candidate) &&
-        mpz_probab_prime_p(candidate, 25) > 0 &&
-        mpz_probab_prime_p(candidate, 50) > 0) {
-        mpz_set(out_prime, candidate);
-        mpz_clear(candidate);
-        return;
-    }
-
-    /* Windowed symmetric search */
-    mpfr_t ln_est; mpfr_init2(ln_est, mpfr_get_prec(x0));
-    mpfr_log(ln_est, x0, MPFR_RNDN);
-    long base_window = (long)ceil(4.0 * mpfr_get_d(ln_est, MPFR_RNDN));
-    mpfr_clear(ln_est);
-    if (base_window < 256) base_window = 256;
-
-    for (long step = 1; step <= base_window; ++step) {
-        for (int dir = +1; dir >= -1; dir -= 2) {
-            mpz_t t; mpz_init(t);
-            if (dir > 0) mpz_add_ui(t, candidate, (unsigned long)step);
-            else {
-                if (mpz_cmp_ui(candidate, (unsigned long)step) <= 0) { mpz_clear(t); continue; }
-                mpz_sub_ui(t, candidate, (unsigned long)step);
-            }
-            if (mpz_even_p(t)) {
-                if (dir > 0) mpz_add_ui(t, t, 1);
-                else mpz_sub_ui(t, t, 1);
-            }
-            snap_to_6k_pm1(t, dir);
-            if (mpz_cmp_ui(t, 3) < 0) { mpz_clear(t); continue; }
-
-            if (!divisible_by_small_prime(t) &&
-                mpz_probab_prime_p(t, 25) > 0 &&
-                mpz_probab_prime_p(t, 50) > 0) {
-                mpz_set(out_prime, t);
-                mpz_clear(t);
-                mpz_clear(candidate);
-                return;
-            }
-            mpz_clear(t);
-        }
-    }
-
-    /* Forward scan until prime */
-    {
-        mpz_t t; mpz_init_set(t, candidate);
-        while (1) {
-            mpz_add_ui(t, t, 2);
-            snap_to_6k_pm1(t, +1);
-            if (divisible_by_small_prime(t)) continue;
-            if (mpz_probab_prime_p(t, 25) > 0 && mpz_probab_prime_p(t, 50) > 0) {
-                mpz_set(out_prime, t);
-                mpz_clear(t);
-                mpz_clear(candidate);
-                return;
-            }
-        }
-    }
+    /* GMP's nextprime returns the next prime strictly greater than n,
+       so step back one to include n itself if already prime. */
+    mpz_sub_ui(candidate, candidate, 1);
+    mpz_nextprime(out_prime, candidate);
+    mpz_clear(candidate);
 }
 
 /* --------- Public API: MPFR prediction (approx) --------- */
@@ -294,10 +238,10 @@ int z5d_predict_nth_prime_mpz_big(mpz_t prime_out, const mpz_t n) {
         }
     }
 
-    /* Precision scales with bit length of n; add slack for logs */
+    /* Precision scales with bit length of n; add generous slack for logs */
     mpfr_prec_t prec = Z5D_DEFAULT_PRECISION;
     size_t bits = mpz_sizeinbase(n, 2);
-    if (bits + 256 > prec) prec = (mpfr_prec_t)(bits + 256);
+    if (bits + 2048 > prec) prec = (mpfr_prec_t)(bits + 2048);
 
     mpfr_t k_mp, pred;
     mpfr_init2(k_mp, prec);

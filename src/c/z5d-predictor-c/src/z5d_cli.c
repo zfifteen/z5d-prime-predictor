@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     }
     size_t bits = mpz_sizeinbase(n_mpz, 2);
     if (precision == Z5D_DEFAULT_PRECISION) {
-        mpfr_prec_t suggested = (mpfr_prec_t)(bits + 256);
+        mpfr_prec_t suggested = (mpfr_prec_t)(bits + 2048);
         if (suggested > precision) precision = suggested;
     }
 
