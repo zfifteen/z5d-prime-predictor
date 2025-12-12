@@ -17,7 +17,7 @@ EXECUTABLE="$BIN_DIR/z5d_bench"
 DATA_FILE="$REPO_ROOT/data/KNOWN_PRIMES.md"
 TEMP_LOG="/tmp/z5d_c_validation.log"
 
-echo "=== Z5D-P Compliance Verification (C99) ==="
+echo "=== Z5D-P Compliance Verification (C99 + Python parity) ==="
 echo "Repo Root: $REPO_ROOT"
 echo "Source:    $C_SRC_DIR"
 echo "Data:      $DATA_FILE"
@@ -76,8 +76,8 @@ COUNT=${#INDICES[@]}
 echo "✅ Loaded $COUNT test cases from KNOWN_PRIMES.md"
 
 
-# 4. Validation Loop
-# ------------------
+# 4. Validation Loop (C vs Python vs Ground Truth)
+# ------------------------------------------------
 echo -e "\n[3/3] Running Validation Suite..."
 echo "      (Tolerance: Exact match required)"
 
@@ -85,43 +85,100 @@ PASS_COUNT=0
 FAIL_COUNT=0
 
 # Create CSV header for log
-echo "n,expected,actual,status,time_ms" > "$TEMP_LOG"
+echo "n,expected,c,python,status,time_ms_c,time_ms_py" > "$TEMP_LOG"
 
 for (( i=0; i<COUNT; i++ )); do
     n="${INDICES[$i]}"
     expected="${EXPECTED_PRIMES[$i]}"
     
-    # Run C binary
-    # CLI usage: ./z5d_cli <n>
-    output=$("$EXECUTABLE" "$n" 2>&1)
+    # --- C binary ---
+    t0_c=$(python3 - <<'PY'
+import time
+print(time.perf_counter())
+PY
+)
+    output_c=$("$EXECUTABLE" "$n" 2>&1)
+    t1_c=$(python3 - <<'PY'
+import time
+print(time.perf_counter())
+PY
+)
+    time_c_ms=$(python3 - <<PY
+start=$t0_c
+end=$t1_c
+print((end-start)*1000)
+PY
+)
+    actual_c=$(echo "$output_c" | grep "Predicted prime:" | awk '{print $3}')
     
-    # Parse output: "Predicted prime: 12345"
-    actual=$(echo "$output" | grep "Predicted prime:" | awk '{print $3}')
-    
-    # Validation
-    if [ "$actual" == "$expected" ]; then
-        echo "  [PASS] n=10^$(( ${#n} - 1 )) -> p_n=$actual"
+    # --- Python predictor (inline, no wrapper) ---
+    t0_py=$(python3 - <<'PY'
+import time
+print(time.perf_counter())
+PY
+)
+    actual_py=$(python3 - <<PY
+import sys, os
+sys.path.append(os.path.join("$REPO_ROOT","src","python"))
+from z5d_predictor import predict_nth_prime
+print(predict_nth_prime($n).prime)
+PY
+)
+    t1_py=$(python3 - <<'PY'
+import time
+print(time.perf_counter())
+PY
+)
+    time_py_ms=$(python3 - <<PY
+start=$t0_py
+end=$t1_py
+print((end-start)*1000)
+PY
+)
+
+    status="PASS"
+    message=""
+
+    if [ "$actual_c" != "$expected" ] && [ "$actual_py" != "$expected" ]; then
+        status="FAIL"
+        message="C != expected; PY != expected"
+    elif [ "$actual_c" != "$expected" ] && [ "$actual_py" == "$expected" ]; then
+        status="FAIL"
+        message="C FAIL (PY OK)"
+    elif [ "$actual_c" == "$expected" ] && [ "$actual_py" != "$expected" ]; then
+        status="FAIL"
+        message="PY FAIL (C OK)"
+    elif [ "$actual_c" != "$actual_py" ]; then
+        status="FAIL"
+        message="C != PY (both match expected? check)"
+    fi
+
+    if [ "$status" == "PASS" ]; then
+        echo "  [PASS] n=$n -> p_n=$expected (C=$actual_c, PY=$actual_py)"
         ((PASS_COUNT++))
     else
         echo "  [FAIL] n=$n"
         echo "         Expected: $expected"
-        echo "         Got:      $actual"
-        echo "         Output:   $output"
+        echo "         C:        $actual_c"
+        echo "         Python:   $actual_py"
+        echo "         Note:     $message"
         ((FAIL_COUNT++))
     fi
+
+    echo "$n,$expected,$actual_c,$actual_py,$status,$time_c_ms,$time_py_ms" >> "$TEMP_LOG"
 done
 
 # 5. Final Report
-#లుగా---------------
+# ----------------
 echo -e "\n=== Summary ==="
 echo "Total Tests: $COUNT"
 echo "Passed:      $PASS_COUNT"
 echo "Failed:      $FAIL_COUNT"
 
 if [ $FAIL_COUNT -eq 0 ]; then
-    echo "✅ Z5D-P C99 Implementation is COMPLIANT."
+    echo "✅ Z5D-P C99 & Python implementations are COMPLIANT."
     exit 0
 else
-    echo "❌ Z5D-P C99 Implementation FAILED verification."
+    echo "❌ Verification FAILED."
     exit 1
 fi
