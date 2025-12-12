@@ -7,6 +7,16 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PY_SRC_DIR="$REPO_ROOT/src/python"
 OUT_CSV="/tmp/z5d_big_n_timings_python.csv"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+# Verify gmpy2 is available in the chosen interpreter (no fallbacks)
+if ! "$PYTHON_BIN" - <<'PY' >/dev/null 2>&1; then
+import gmpy2
+PY
+  echo "❌ gmpy2 not found in $PYTHON_BIN. Install with:"
+  echo "   $PYTHON_BIN -m pip install gmpy2"
+  exit 1
+fi
 
 if [ -n "${EXPS_OVERRIDE:-}" ]; then
   IFS=',' read -r -a EXPS <<< "$EXPS_OVERRIDE"
@@ -51,12 +61,12 @@ print_hardware_overview
 # Warm-up sweep (not logged)
 echo "Warm-up sweep (not logged)..."
 for EXP in "${EXPS[@]}"; do
-  n_str=$(python3 - <<PY
+  n_str=$("$PYTHON_BIN" - <<PY
 exp = int("${EXP}")
 print(10**exp)
 PY
 )
-  python3 - <<PY
+  "$PYTHON_BIN" - <<PY
 import sys, os
 sys.path.append("$PY_SRC_DIR")
 from z5d_predictor import predict_nth_prime
@@ -68,14 +78,14 @@ echo "Warm-up done. Running measured sweep..."
 echo "n,elapsed_ms,prime_digits" > "$OUT_CSV"
 
 for EXP in "${EXPS[@]}"; do
-  n_str=$(python3 - <<PY
+  n_str=$("$PYTHON_BIN" - <<PY
 exp = int("${EXP}")
 print(10**exp)
 PY
 )
 
   start_ns=$(date +%s%N)
-  prime=$(python3 - <<PY
+  prime=$("$PYTHON_BIN" - <<PY
 import sys, os, time
 sys.path.append("$PY_SRC_DIR")
 from z5d_predictor import predict_nth_prime
