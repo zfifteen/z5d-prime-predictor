@@ -7,7 +7,10 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 C_SRC_DIR="$REPO_ROOT/src/c/z5d-predictor-c"
 CLI="$C_SRC_DIR/bin/z5d_cli"
-OUT_CSV="/tmp/z5d_big_n_timings.csv"
+OUTPUT_DIR="$REPO_ROOT/scripts/output"
+OUT_CSV="$OUTPUT_DIR/z5d_big_n_timings.csv"
+
+mkdir -p "$OUTPUT_DIR"
 
 if [ -n "${EXPS_OVERRIDE:-}" ]; then
   IFS=',' read -r -a EXPS <<< "$EXPS_OVERRIDE"

@@ -6,8 +6,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PY_SRC_DIR="$REPO_ROOT/src/python"
-OUT_CSV="/tmp/z5d_big_n_timings_python.csv"
+OUTPUT_DIR="$REPO_ROOT/scripts/output"
+OUT_CSV="$OUTPUT_DIR/z5d_big_n_timings_python.csv"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+mkdir -p "$OUTPUT_DIR"
 
 # Verify gmpy2 is available in the chosen interpreter (no fallbacks)
 if ! "$PYTHON_BIN" - <<'PY' >/dev/null 2>&1; then

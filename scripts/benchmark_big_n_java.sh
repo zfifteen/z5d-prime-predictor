@@ -8,9 +8,12 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 JAVA_DIR="$REPO_ROOT/src/java"
 JAVA_MAIN_CLASS="z5d.predictor.Z5DMain"
 JAVA_CP="$JAVA_DIR/build/classes/java/main"
-OUT_CSV="/tmp/z5d_big_n_timings_java.csv"
+OUTPUT_DIR="$REPO_ROOT/scripts/output"
+OUT_CSV="$OUTPUT_DIR/z5d_big_n_timings_java.csv"
 JAVA_BIN="${JAVA_BIN:-java}"
 GRADLE_BIN="${GRADLE_BIN:-gradle}"
+
+mkdir -p "$OUTPUT_DIR"
 
 if [ -n "${EXPS_OVERRIDE:-}" ]; then
   IFS=',' read -r -a EXPS <<< "$EXPS_OVERRIDE"

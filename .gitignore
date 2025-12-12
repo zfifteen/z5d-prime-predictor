@@ -6,6 +6,7 @@ src/c/z5d-predictor-c/build/
 src/c/z5d-mersenne/bin/
 src/c/prime-generator/bin/
 prime_generator_output.txt
+scripts/output/
 
 # TypeScript/Node.js
 src/ts/node_modules/
