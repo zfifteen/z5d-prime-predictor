@@ -1,11 +1,11 @@
 #!/bin/bash
 # compare_z5dp_implementations.sh
 # 
-# Purpose: Validate Z5D-P C99 Implementation against Ground Truth.
+# Purpose: Validate Z5D-P C99/Python/Java implementations against Ground Truth.
 # Usage: ./compare_z5dp_implementations.sh
 #
-# This script serves as the "Compliance Certificate" for the C implementation.
-# It compiles the C code, runs it against known primes (10^1 to 10^18), 
+# This script serves as the "Compliance Certificate" for the C, Python, and Java implementations.
+# It builds C and Java, executes all three against known primes (10^1 to 10^18),
 # and enforces strict mathematical correctness.
 
 # 1. Setup & Configuration
@@ -211,7 +211,7 @@ echo "Passed:      $PASS_COUNT"
 echo "Failed:      $FAIL_COUNT"
 
 if [ $FAIL_COUNT -eq 0 ]; then
-    echo "✅ Z5D-P C99 & Python implementations are COMPLIANT."
+    echo "✅ Z5D-P C99, Python, and Java implementations are COMPLIANT."
     exit 0
 else
     echo "❌ Verification FAILED."
