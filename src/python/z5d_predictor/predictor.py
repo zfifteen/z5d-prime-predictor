@@ -13,21 +13,16 @@ API: predict_nth_prime(n: int) -> PredictResult
 
 from __future__ import annotations
 
-import math
+import gmpy2 as gp
 from dataclasses import dataclass
 from typing import Optional
 
 # ---------------------- Constants (match C) ----------------------
-Z5D_PREDICTOR_VERSION = "2.0.0"
+Z5D_PREDICTOR_VERSION = "2.1.0"
 
-_C_CAL = -0.00247
-_KAPPA_STAR = 0.04449
-_E_FOURTH = math.exp(4.0)
-
-_SMALL_PRIMES = [
-    2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
-    53, 59, 61, 67, 71, 73, 79, 83, 89, 97
-]
+_C_CAL = gp.mpfr("-0.00247")
+_KAPPA_STAR = gp.mpfr("0.04449")
+_E_FOURTH = gp.exp(gp.mpfr(4))
 
 _KNOWN_PRIMES = {
     1: 2,
@@ -59,11 +54,11 @@ class PredictResult:
     estimate: int
     iterations: int
     converged: bool
-    method: str = "z5d_closed_form+refine"
+    method: str = "z5d_closed_form+refine_gmpy2"
 
 
 # ---------------------- Math helpers ----------------------
-def _closed_form_estimate(n: int) -> float:
+def _closed_form_estimate(n: int) -> gp.mpz:
     """
     Calibrated closed-form used by the C implementation.
     pnt = n * (ln n + ln ln n - 1 + (ln ln n - 2)/ln n)
@@ -71,133 +66,33 @@ def _closed_form_estimate(n: int) -> float:
     e_term = pnt^(-1/3) * pnt * kappa_star
     """
     if n < 2:
-        return 2.0
+        return gp.mpz(2)
 
-    ln_n = math.log(n)
-    ln_ln_n = math.log(ln_n)
-
-    pnt = n * (ln_n + ln_ln_n - 1.0 + (ln_ln_n - 2.0) / ln_n)
-
-    ln_pnt = math.log(pnt)
-    d_term = ((ln_pnt / _E_FOURTH) ** 2) * pnt * _C_CAL
-
-    e_term = (pnt ** (-1.0 / 3.0)) * pnt * _KAPPA_STAR
-
-    est = pnt + d_term + e_term
-    return est if est > 0 else pnt
-
-
-def _snap_to_6k_pm1(x: int, direction: int) -> int:
-    """Snap x to the nearest 6k±1 in the given direction."""
-    r = x % 6
-    delta = 0
-    if direction < 0:
-        if r == 0:
-            delta = 1
-        elif r == 2:
-            delta = 1
-        elif r == 3:
-            delta = 2
-        elif r == 4:
-            delta = 3
-    else:
-        if r == 0:
-            delta = 1
-        elif r == 2:
-            delta = 3
-        elif r == 3:
-            delta = 2
-        elif r == 4:
-            delta = 1
-    if delta:
-        return x - delta if direction < 0 else x + delta
-    return x
+    prec_bits = max(2048, int(gp.log2(n)) + 2048)
+    with gp.local_context(gp.context(), precision=prec_bits):
+        dn = gp.mpfr(n)
+        ln_n = gp.log(dn)
+        ln_ln_n = gp.log(ln_n)
+        pnt = dn * (ln_n + ln_ln_n - 1 + (ln_ln_n - 2) / ln_n)
+        if pnt <= 0:
+            pnt = dn
+        ln_pnt = gp.log(pnt)
+        d_term = ((ln_pnt / _E_FOURTH) ** 2) * pnt * _C_CAL
+        e_term = (pnt ** gp.mpfr("-0.3333333333333333")) * pnt * _KAPPA_STAR
+        est = pnt + d_term + e_term
+        if est <= 0:
+            est = pnt
+        return gp.mpz(est + 0.5)
 
 
-def _divisible_by_small_prime(n: int) -> bool:
-    for p in _SMALL_PRIMES:
-        if n == p:
-            return False
-        if n % p == 0:
-            return True
-    return False
-
-
-def _miller_rabin_det(n: int) -> bool:
-    """Deterministic for 64-bit range using a fixed base set."""
-    if n < 2:
-        return False
-    # small primes
-    for p in _SMALL_PRIMES:
-        if n == p:
-            return True
-        if n % p == 0:
-            return False
-
-    # write n-1 = d * 2^s
-    d = n - 1
-    s = 0
-    while d % 2 == 0:
-        d //= 2
-        s += 1
-
-    # Deterministic bases for n < 2^64
-    for a in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
-        if a % n == 0:
-            continue
-        x = pow(a, d, n)
-        if x == 1 or x == n - 1:
-            continue
-        for _ in range(s - 1):
-            x = pow(x, 2, n)
-            if x == n - 1:
-                break
-        else:
-            return False
-    return True
-
-
-def _refine_to_prime(candidate: int) -> int:
+def _refine_to_prime(candidate: gp.mpz) -> gp.mpz:
     """
-    Given an integer estimate, search locally for a probable prime.
+    Given an integer estimate, return the next probable prime using gmpy2.
     """
-    if candidate < 3:
-        candidate = 3
-    if candidate % 2 == 0:
-        candidate += 1
-    candidate = _snap_to_6k_pm1(candidate, +1)
-
-    # Check candidate itself
-    if not _divisible_by_small_prime(candidate) and _miller_rabin_det(candidate):
-        return candidate
-
-    # Symmetric windowed search
-    window = max(256, int(math.ceil(4.0 * math.log(candidate))))
-    for step in range(1, window + 1):
-        for direction in (+1, -1):
-            t = candidate + direction * step
-            if t < 3:
-                continue
-            if t % 2 == 0:
-                t += 1 if direction > 0 else -1
-            t = _snap_to_6k_pm1(t, direction)
-
-            if t < 3:
-                continue
-            if _divisible_by_small_prime(t):
-                continue
-            if _miller_rabin_det(t):
-                return t
-
-    # Fallback forward scan
-    t = candidate
-    while True:
-        t += 2
-        t = _snap_to_6k_pm1(t, +1)
-        if _divisible_by_small_prime(t):
-            continue
-        if _miller_rabin_det(t):
-            return t
+    if candidate < 2:
+        candidate = gp.mpz(2)
+    # next_prime finds prime strictly greater, so step back one.
+    return gp.next_prime(candidate - 1)
 
 
 # ---------------------- Public API ----------------------
@@ -214,10 +109,8 @@ def predict_nth_prime(n: int) -> PredictResult:
         return PredictResult(prime=p, estimate=p, iterations=0, converged=True)
 
     est = _closed_form_estimate(n)
-    est_int = int(round(est))
-
-    prime = _refine_to_prime(est_int)
-    return PredictResult(prime=prime, estimate=est_int, iterations=1, converged=True)
+    prime = _refine_to_prime(est)
+    return PredictResult(prime=int(prime), estimate=int(est), iterations=1, converged=True)
 
 
 def get_version() -> str:
