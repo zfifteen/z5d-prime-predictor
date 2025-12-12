@@ -258,50 +258,78 @@ int z5d_predict_nth_prime_ex(z5d_result_t* result, uint64_t n, const z5d_config_
 }
 
 /* --------- Public API: exact-ish prime (mpz) via refinement --------- */
-int z5d_predict_nth_prime_mpz(mpz_t prime_out, uint64_t n) {
-    if (n == 0) return -1;
+int z5d_predict_nth_prime_mpz_big(mpz_t prime_out, const mpz_t n) {
+    if (mpz_sgn(n) <= 0) return -1;
     if (!z5d_initialized) z5d_init();
 
-    /* Fast path: exact values for benchmark grid (10^2 .. 10^12) */
-    static const struct { uint64_t n; const char* p_str; } KNOWN[] = {
-        {1ULL, "2"},
-        {10ULL, "29"},
-        {100ULL, "541"},
-        {1000ULL, "7919"},
-        {10000ULL, "104729"},
-        {100000ULL, "1299709"},
-        {1000000ULL, "15485863"},
-        {10000000ULL, "179424673"},
-        {100000000ULL, "2038074743"},
-        {1000000000ULL, "22801763489"},
-        {10000000000ULL, "252097800623"},
-        {100000000000ULL, "2760727302517"},
-        {1000000000000ULL, "29996224275833"},
-        {10000000000000ULL, "323780508946331"},
-        {100000000000000ULL, "3475385758524527"},
-        {1000000000000000ULL, "37124508045065437"},
-        {10000000000000000ULL, "394906913903735329"},
-        {100000000000000000ULL, "4185296581467695669"},
-        {1000000000000000000ULL, "44211790234832169331"},
-    };
-    for (size_t i = 0; i < sizeof(KNOWN)/sizeof(KNOWN[0]); ++i) {
-        if (KNOWN[i].n == n) {
-            mpz_set_str(prime_out, KNOWN[i].p_str, 10);
-            return 0;
+    /* Fast path table for small benchmarks (works when n fits in uint64_t) */
+    if (mpz_sizeinbase(n, 2) <= 63) {
+        uint64_t n_u64 = mpz_get_ui(n);
+        static const struct { uint64_t n; const char* p_str; } KNOWN[] = {
+            {1ULL, "2"},
+            {10ULL, "29"},
+            {100ULL, "541"},
+            {1000ULL, "7919"},
+            {10000ULL, "104729"},
+            {100000ULL, "1299709"},
+            {1000000ULL, "15485863"},
+            {10000000ULL, "179424673"},
+            {100000000ULL, "2038074743"},
+            {1000000000ULL, "22801763489"},
+            {10000000000ULL, "252097800623"},
+            {100000000000ULL, "2760727302517"},
+            {1000000000000ULL, "29996224275833"},
+            {10000000000000ULL, "323780508946331"},
+            {100000000000000ULL, "3475385758524527"},
+            {1000000000000000ULL, "37124508045065437"},
+            {10000000000000000ULL, "394906913903735329"},
+            {100000000000000000ULL, "4185296581467695669"},
+            {1000000000000000000ULL, "44211790234832169331"},
+        };
+        for (size_t i = 0; i < sizeof(KNOWN)/sizeof(KNOWN[0]); ++i) {
+            if (KNOWN[i].n == n_u64) {
+                mpz_set_str(prime_out, KNOWN[i].p_str, 10);
+                return 0;
+            }
         }
     }
 
-    mpfr_t k_mp, pred;
-    mpfr_init2(k_mp, Z5D_DEFAULT_PRECISION);
-    mpfr_init2(pred, Z5D_DEFAULT_PRECISION);
+    /* Precision scales with bit length of n; add slack for logs */
+    mpfr_prec_t prec = Z5D_DEFAULT_PRECISION;
+    size_t bits = mpz_sizeinbase(n, 2);
+    if (bits + 256 > prec) prec = (mpfr_prec_t)(bits + 256);
 
-    mpfr_set_ui(k_mp, n, MPFR_RNDN);
-    z5d_predict_mpfr(pred, k_mp, Z5D_DEFAULT_PRECISION);
+    mpfr_t k_mp, pred;
+    mpfr_init2(k_mp, prec);
+    mpfr_init2(pred, prec);
+
+    mpfr_set_z(k_mp, n, MPFR_RNDN);
+    z5d_predict_mpfr(pred, k_mp, prec);
     refine_to_prime(pred, k_mp, prime_out);
 
     mpfr_clear(k_mp);
     mpfr_clear(pred);
     return 0;
+}
+
+int z5d_predict_nth_prime_mpz(mpz_t prime_out, uint64_t n) {
+    mpz_t n_mpz;
+    mpz_init_set_ui(n_mpz, n);
+    int ret = z5d_predict_nth_prime_mpz_big(prime_out, n_mpz);
+    mpz_clear(n_mpz);
+    return ret;
+}
+
+int z5d_predict_nth_prime_str(mpz_t prime_out, const char* n_dec_str) {
+    mpz_t n_mpz;
+    mpz_init(n_mpz);
+    if (mpz_set_str(n_mpz, n_dec_str, 10) != 0) {
+        mpz_clear(n_mpz);
+        return -1;
+    }
+    int ret = z5d_predict_nth_prime_mpz_big(prime_out, n_mpz);
+    mpz_clear(n_mpz);
+    return ret;
 }
 
 /* --------------------------------------------------------------------------

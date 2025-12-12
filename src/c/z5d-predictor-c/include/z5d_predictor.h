@@ -126,6 +126,10 @@ int z5d_predict_nth_prime_ex(z5d_result_t* result, uint64_t n, const z5d_config_
  */
 int z5d_predict_nth_prime_mpz(mpz_t prime_out, uint64_t n);
 
+/* Big-n entry points */
+int z5d_predict_nth_prime_mpz_big(mpz_t prime_out, const mpz_t n);
+int z5d_predict_nth_prime_str(mpz_t prime_out, const char* n_dec_str);
+
 /* Legacy helpers retained for compatibility with existing math utilities */
 int z5d_mobius(int n);
 void z5d_riemann_R(mpfr_t rop, const mpfr_t x, int K, mpfr_prec_t prec);
