@@ -9,9 +9,11 @@ C_SRC_DIR="$REPO_ROOT/src/c/z5d-predictor-c"
 CLI="$C_SRC_DIR/bin/z5d_cli"
 OUT_CSV="/tmp/z5d_big_n_timings.csv"
 
-EXPS=()
-for e in $(seq 20 10 1230); do EXPS+=("$e"); done
-EXPS+=("1233")
+if [ -n "${EXPS_OVERRIDE:-}" ]; then
+  IFS=',' read -r -a EXPS <<< "$EXPS_OVERRIDE"
+else
+  EXPS=(20 50 100 200 300 400 500 600 700 800 900 1000 1100 1200 1233)
+fi
 
 echo "=== Z5D big-n benchmark (C) ==="
 echo "Building C predictor..."
@@ -23,12 +25,11 @@ echo "n,elapsed_ms,prime_digits" > "$OUT_CSV"
 for EXP in "${EXPS[@]}"; do
   n_str=$(python3 - <<PY
 from decimal import Decimal, getcontext
-import sys
-exp=int(sys.argv[1])
+exp = int("${EXP}")
 getcontext().prec = exp + 10
 print((Decimal(10) ** exp).to_integral_exact())
 PY
-"$EXP")
+)
 
   start_ns=$(date +%s%N)
   output=$("$CLI" "$n_str")
