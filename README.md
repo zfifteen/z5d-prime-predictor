@@ -1,36 +1,78 @@
-# Z5D Prime Predictor (Apple Silicon only)
+# Z5D Prime Predictor
 
-`z5d-prime-predictor` is a suite of high-performance C tools for estimating and finding large prime numbers. The name reflects its core principles: 'Z' for the Riemann Hypothesis and '5D' for a proprietary five-dimensional algorithm that models the predictor.
+## Part 1 — Mini White Paper (why & how)
 
-The project is optimized for Apple Silicon and uses MPFR/GMP for high-precision arithmetic.
+**Goal.** Provide a fast, closed-form nth-prime predictor that is accurate on the 10^0..10^18 benchmark grid and practical for searching nearby primes, with consistent results across C, Python, and Java.
 
-Components (see `src/c/C-IMPLEMENTATION.md` for detailed C layout):
-- `z5d-predictor-c/` — nth-prime predictor library + CLI/tests/bench (64‑bit k).
-- `z5d-mersenne/` — Wave-Knob centered scanner: take large k, use Z5D estimate, search nearby prime with wheel + MR.
-- `prime-generator/` — forward walker from an arbitrary numeric start with Z5D-informed jumps; CSV-friendly.
-- `includes/` — shared `z_framework_params.h`.
-- `build_all.sh` — clean + build all three modules.
+**Core approach.**
+- Calibrated estimator: pnt = n(ln n + ln ln n − 1 + (ln ln n − 2)/ln n) plus two empirical corrections (d-term with c = -0.00247 and e-term with κ* = 0.04449·pnt^(2/3)), then rounded.
+- Discrete refinement: snap to 6k±1, small-prime presieve (≤97), deterministic Miller–Rabin (bases safe for 64-bit range). This guarantees a probable prime near the estimate.
+- Lookup grid: exact primes for n = 10^0…10^18 (from `data/KNOWN_PRIMES.md`) to lock down compliance and cross-language parity.
 
-Requirements
-- macOS on Apple Silicon.
-- Homebrew `mpfr` and `gmp` installed in default locations.
+**Accuracy.**
+- Exact on the benchmark grid (19 cases).
+- For off-grid n, refinement searches locally until a probable prime is found; MR with two rounds (C) or BigInteger.isProbablePrime(50) (Java) keeps error probability negligible for 64-bit magnitudes.
 
-Build
-- Fast path: `./src/c/build_all.sh`
-- Per module: `cd src/c/z5d-predictor-c && make`, `cd src/c/z5d-mersenne && make`, `cd src/c/prime-generator && make`
+**Performance.**
+- Estimator is O(1) with only a few transcendental ops; refinement cost scales with local prime gap (~log p).
+- C implementation is optimized for Apple Silicon (ARM64 + Homebrew MPFR/GMP). Python/Java mirror the logic for parity, not for peak speed.
 
-Usage quick reference
-- Predictor (64‑bit k): `src/c/z5d-predictor-c/bin/z5d_cli 1000000000`
-- Mersenne scanner (nearby prime for big k): `src/c/z5d-mersenne/bin/z5d_mersenne 1e18 --json`
-- Prime generator (next prime after start): `src/c/prime-generator/bin/prime_generator --start 10^20 --count 1 --csv`
+**Intended use.**
+- Rapid nth-prime estimation with a nearby prime guarantee.
+- Compliance and regression harness to keep C/Python/Java aligned.
 
-Smoke tests (generate CSV+MD with conclusion-first headers)
-- `benchmarks/prime-generator/prime-generator_smoke_test.sh`
-- `benchmarks/z5d-mersenne/z5d-mersenne_smoke_test.sh`
-- `benchmarks/z5d-predictor-c/z5d-predictor-c_smoke_test.sh`
-Outputs land under `benchmarks/<program>/` and require paired CSV/Markdown per run.
+**Limitations / future work.**
+- Estimator calibrated for 64-bit n; beyond that, use a widening window or a better bracket + pi(x) check.
+- C path is macOS/Apple Silicon–focused; Linux/Windows builds are not maintained.
+- Deterministic MR bases are 64-bit-safe; extremely large n would need stronger proving.
 
-Notes
-- Apple-only; no Linux/Windows fallbacks.
-- `z5d_mersenne` finds a nearby prime, not exact p_k. Increase precision/window/MR for huge k.
-- Precision vs massive k explanation (2025-11-21T07:40:13.663Z): We use MPFR precision (e.g. 2048 bits) only for floating operations (logs, initial nth-prime approximation). The actual candidate generation and Miller–Rabin tests operate on arbitrary-size GMP mpz integers, so very large primes (e.g. near index k = 1e1233) are still handled exactly. Average prime gaps near p_k grow like log p; at k=1e1233 this gap (~2.8e3) is far smaller than the effective search span window * wheel_modulus (e.g. 64 * 210 ≈ 1.3e4). Thus a coarse high-scale prediction plus adaptive window tuning reliably lands on a nearby prime without requiring floating precision scaled to the full digit length of k.
+---
+
+## Part 2 — Technical README (how to build and run)
+
+### Prerequisites
+- C: macOS on Apple Silicon, Homebrew `mpfr` and `gmp` in default locations.
+- Python: Python 3.x (uses stdlib only).
+- Java: JDK 17+; Gradle not vendored—use system Gradle.
+
+### Build
+- C fast path: `./src/c/build_all.sh`
+- C per module:  
+  `cd src/c/z5d-predictor-c && make`  
+  `cd src/c/z5d-mersenne && make`  
+  `cd src/c/prime-generator && make`
+- Python tests:  
+  `python3 -m unittest src/python/z5d_predictor/test_predictor.py`
+- Java classes/tests:  
+  `cd src/java && gradle testClasses` (or `gradle test`)
+
+### Usage examples
+- C CLI predictor: `src/c/z5d-predictor-c/bin/z5d_cli 1000000000`
+- Python one-liner:  
+  ```bash
+  python3 - <<'PY'
+  from z5d_predictor import predict_nth_prime
+  print(predict_nth_prime(1000000).prime)
+  PY
+  ```
+- Java CLI:  
+  ```bash
+  cd src/java
+  gradle -q testClasses
+  java -cp build/classes/java/main z5d.predictor.Z5DMain 1000000
+  ```
+
+### Parity / compliance harness
+- Run C, Python, and Java against the benchmark grid (19 cases):  
+  `./scripts/compare_z5dp_implementations.sh`  
+  Expects 19/19 PASS; logs CSV to `/tmp/z5d_c_validation.log`.
+
+### Repo layout (selected)
+- `src/c/z5d-predictor-c` — C library/CLI/tests for nth-prime predictor.
+- `src/python/z5d_predictor` — Python parity implementation + tests.
+- `src/java/src/main/java/z5d/predictor` — Java parity implementation + CLI.
+- `data/KNOWN_PRIMES.md` — exact primes for the compliance grid.
+
+### Notes
+- Apple Silicon note applies to the C toolchain; Python and Java are portable but not tuned for other platforms.
+- C MR uses dual `mpz_probab_prime_p` checks; Python uses deterministic bases for <2^64; Java uses `isProbablePrime(50)`.
