@@ -17,14 +17,14 @@ EXECUTABLE="$BIN_DIR/z5d_bench"
 DATA_FILE="$REPO_ROOT/data/KNOWN_PRIMES.md"
 TEMP_LOG="/tmp/z5d_c_validation.log"
 
-echo "=== Z5D-P Compliance Verification (C99 + Python parity) ==="
+echo "=== Z5D-P Compliance Verification (C99 + Python + Java parity) ==="
 echo "Repo Root: $REPO_ROOT"
 echo "Source:    $C_SRC_DIR"
 echo "Data:      $DATA_FILE"
 
 # 2. Compilation (using Makefile)
 # -------------------------------
-echo -e "\n[1/3] Building C99 Implementation..."
+echo -e "\n[1/4] Building C99 Implementation..."
 
 cd "$C_SRC_DIR"
 make clean > /dev/null
@@ -47,7 +47,7 @@ echo "✅ Build SUCCESS."
 
 # 3. Ground Truth Parsing
 # -----------------------
-echo -e "\n[2/3] Parsing Ground Truth Data..."
+echo -e "\n[2/4] Parsing Ground Truth Data..."
 
 if [ ! -f "$DATA_FILE" ]; then
     echo "❌ Ground truth file not found: $DATA_FILE"
@@ -78,14 +78,26 @@ echo "✅ Loaded $COUNT test cases from KNOWN_PRIMES.md"
 
 # 4. Validation Loop (C vs Python vs Ground Truth)
 # ------------------------------------------------
-echo -e "\n[3/3] Running Validation Suite..."
+echo -e "\n[3/4] Building Java Implementation..."
+JAVA_DIR="$REPO_ROOT/src/java"
+JAVA_MAIN_CLASS="z5d.predictor.Z5DMain"
+JAVA_CP="$JAVA_DIR/build/classes/java/main"
+cd "$JAVA_DIR"
+gradle -q testClasses
+if [ $? -ne 0 ]; then
+    echo "❌ Gradle build failed."
+    exit 1
+fi
+echo "✅ Java build SUCCESS."
+
+echo -e "\n[4/4] Running Validation Suite..."
 echo "      (Tolerance: Exact match required)"
 
 PASS_COUNT=0
 FAIL_COUNT=0
 
 # Create CSV header for log
-echo "n,expected,c,python,status,time_ms_c,time_ms_py" > "$TEMP_LOG"
+echo "n,expected,c,python,java,status,time_ms_c,time_ms_py,time_ms_java" > "$TEMP_LOG"
 
 for (( i=0; i<COUNT; i++ )); do
     n="${INDICES[$i]}"
@@ -136,36 +148,59 @@ print((end-start)*1000)
 PY
 )
 
+    # --- Java predictor ---
+    t0_java=$(python3 - <<'PY'
+import time
+print(time.perf_counter())
+PY
+)
+    actual_java=$(java -cp "$JAVA_CP" "$JAVA_MAIN_CLASS" "$n")
+    t1_java=$(python3 - <<'PY'
+import time
+print(time.perf_counter())
+PY
+)
+    time_java_ms=$(python3 - <<PY
+start=$t0_java
+end=$t1_java
+print((end-start)*1000)
+PY
+)
+
     status="PASS"
     message=""
 
-    if [ "$actual_c" != "$expected" ] && [ "$actual_py" != "$expected" ]; then
+    if [ "$actual_c" != "$expected" ] && [ "$actual_py" != "$expected" ] && [ "$actual_java" != "$expected" ]; then
         status="FAIL"
-        message="C != expected; PY != expected"
-    elif [ "$actual_c" != "$expected" ] && [ "$actual_py" == "$expected" ]; then
+        message="C != expected; PY != expected; JAVA != expected"
+    elif [ "$actual_c" != "$expected" ] && [ "$actual_py" == "$expected" ] && [ "$actual_java" == "$expected" ]; then
         status="FAIL"
-        message="C FAIL (PY OK)"
-    elif [ "$actual_c" == "$expected" ] && [ "$actual_py" != "$expected" ]; then
+        message="C FAIL (PY & JAVA OK)"
+    elif [ "$actual_c" == "$expected" ] && [ "$actual_py" != "$expected" ] && [ "$actual_java" == "$expected" ]; then
         status="FAIL"
-        message="PY FAIL (C OK)"
-    elif [ "$actual_c" != "$actual_py" ]; then
+        message="PY FAIL (C & JAVA OK)"
+    elif [ "$actual_c" == "$expected" ] && [ "$actual_py" == "$expected" ] && [ "$actual_java" != "$expected" ]; then
         status="FAIL"
-        message="C != PY (both match expected? check)"
+        message="JAVA FAIL (C & PY OK)"
+    elif [ "$actual_c" != "$actual_py" ] || [ "$actual_c" != "$actual_java" ] || [ "$actual_py" != "$actual_java" ]; then
+        status="FAIL"
+        message="Implementations disagree (check individual outputs)"
     fi
 
     if [ "$status" == "PASS" ]; then
-        echo "  [PASS] n=$n -> p_n=$expected (C=$actual_c, PY=$actual_py)"
+        echo "  [PASS] n=$n -> p_n=$expected (C=$actual_c, PY=$actual_py, JAVA=$actual_java)"
         ((PASS_COUNT++))
     else
         echo "  [FAIL] n=$n"
         echo "         Expected: $expected"
         echo "         C:        $actual_c"
         echo "         Python:   $actual_py"
+        echo "         Java:     $actual_java"
         echo "         Note:     $message"
         ((FAIL_COUNT++))
     fi
 
-    echo "$n,$expected,$actual_c,$actual_py,$status,$time_c_ms,$time_py_ms" >> "$TEMP_LOG"
+    echo "$n,$expected,$actual_c,$actual_py,$actual_java,$status,$time_c_ms,$time_py_ms,$time_java_ms" >> "$TEMP_LOG"
 done
 
 # 5. Final Report
