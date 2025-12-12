@@ -12,7 +12,9 @@ OUT_CSV="/tmp/z5d_big_n_timings.csv"
 if [ -n "${EXPS_OVERRIDE:-}" ]; then
   IFS=',' read -r -a EXPS <<< "$EXPS_OVERRIDE"
 else
-  EXPS=(20 50 100 200 300 400 500 600 700 800 900 1000 1100 1200 1233)
+  EXPS=(20)
+  for e in $(seq 50 50 1200); do EXPS+=("$e"); done
+  EXPS+=("1230" "1233")
 fi
 
 echo "=== Z5D big-n benchmark (C) ==="
