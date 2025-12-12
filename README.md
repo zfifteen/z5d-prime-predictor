@@ -1,56 +1,49 @@
 # Z5D Prime Predictor
 
-## Overview
-Z5D is a calibrated nth-prime predictor with a deterministic refinement step. It targets exact results on the 10^0–10^18 benchmark grid and consistent behavior across C, Python, and Java.
+Cross-language nth‑prime predictor (C / Python / Java) with calibrated closed‑form estimate + deterministic refinement. Exact on the 10^0…10^18 grid and validated for very large n (up to 10^1233) via MPFR/GMP (C), gmpy2 (Python), and BigInteger (Java).
 
-## Method
-- **Estimator**: pnt = n(ln n + ln ln n − 1 + (ln ln n − 2)/ln n)  
-  Corrections: d-term with c = -0.00247 and e-term with κ* = 0.04449·pnt^(2/3); result is rounded.
-- **Refinement**: snap to 6k±1, small-prime presieve (≤97), Miller–Rabin (deterministic bases covering 64-bit). Produces a probable prime near the estimate.
-- **Lookup grid**: exact primes for n = 10^0…10^18 (`data/KNOWN_PRIMES.md`) to lock cross-language parity.
+## How it works
+- **Estimator** (Z5D closed form):  
+  pnt = n(ln n + ln ln n − 1 + (ln ln n − 2)/ln n)  
+  d-term with c = −0.00247; e-term with κ* = 0.04449·pnt^(2/3); rounded to nearest int.
+- **Refinement**: forward prime search (`next_prime`/`nextProbablePrime`) after snapping to a suitable starting point. Ensures a probable prime near the estimate.
+- **Ground truth grid**: exact primes for n = 10^0…10^18 in `data/KNOWN_PRIMES.md` to lock parity across languages.
 
-## Guarantees and limits
+## Scope and guarantees
 - Exact on the 19 benchmark indices.  
-- For other n (within 64-bit range), returns a probable prime found by local search; MR probability is negligible for this range.  
-- Estimator is calibrated for 64-bit n; larger ranges would need wider search/bracketing.  
-- C toolchain is optimized for macOS/Apple Silicon; Python/Java are portable but not performance-tuned for other platforms.
++- Big‑n path supports n up to 10^1233 (tested); precision scales with bit length + slack.  
+- Outputs are probable primes (GMP/Java: strong probable prime; Python: gmpy2 probable prime).
 
-## Performance notes
-- Estimator is O(1); refinement cost is proportional to the local prime gap (~log p).  
-- C uses MPFR/GMP; Python/Java mirror the logic for correctness parity.
-
-## Components
-- `src/c/z5d-predictor-c` — C library, CLI, tests/bench (nth prime).  
-- `src/c/z5d-mersenne` — nearby-prime scan for large k.  
-- `src/c/prime-generator` — forward prime walker.  
-- `src/python/z5d_predictor` — Python parity implementation.  
-- `src/java/src/main/java/z5d/predictor` — Java parity implementation + CLI.  
-- `data/KNOWN_PRIMES.md` — ground-truth grid.
+## Layout
+- `src/c/z5d-predictor-c` — MPFR/GMP core, CLI, tests/bench.  
+- `src/python/z5d_predictor` — gmpy2 implementation for parity.  
+- `src/java/src/main/java/z5d/predictor` — BigInteger implementation + CLI.  
+- `scripts/` — compliance harness and big‑n benchmark scripts; CSVs land in `scripts/output/`.  
+- `data/KNOWN_PRIMES.md` — ground-truth grid for parity tests.
 
 ## Prerequisites
-- C: macOS on Apple Silicon; Homebrew `mpfr` and `gmp` in default locations.  
-- Python: Python 3.x (stdlib only).  
-- Java: JDK 17+ and system Gradle (wrapper not vendored).
+- **C**: macOS Apple Silicon; Homebrew `mpfr` and `gmp` on PATH.  
+- **Python**: Python 3.10+ with `gmpy2` installed (`python3 -m pip install gmpy2`).  
+- **Java**: JDK 17+ and Gradle available on PATH.  
 
 ## Build
-- C fast path: `./src/c/build_all.sh`  
-- C per module:  
-  `cd src/c/z5d-predictor-c && make`  
-  `cd src/c/z5d-mersenne && make`  
-  `cd src/c/prime-generator && make`  
+- C all: `./src/c/build_all.sh`  
+- C predictor only: `cd src/c/z5d-predictor-c && make`  
 - Python tests: `python3 -m unittest src/python/z5d_predictor/test_predictor.py`  
 - Java classes/tests: `cd src/java && gradle testClasses` (or `gradle test`)
 
-## Usage
-- C CLI predictor: `src/c/z5d-predictor-c/bin/z5d_cli 1000000000`  
-- Python:  
+## Run the predictors
+- **C CLI (auto precision)**  
+  `src/c/z5d-predictor-c/bin/z5d_cli 1000000000`  
+  (use `-p <bits>` to override precision)
+- **Python**  
   ```bash
-  python3 - <<'PY'
+  PYTHONPATH=src/python python3 - <<'PY'
   from z5d_predictor import predict_nth_prime
-  print(predict_nth_prime(1000000).prime)
+  print(predict_nth_prime(10**20).prime)
   PY
-  ```  
-- Java CLI:  
+  ```
+- **Java CLI**  
   ```bash
   cd src/java
   gradle -q testClasses
@@ -58,10 +51,16 @@ Z5D is a calibrated nth-prime predictor with a deterministic refinement step. It
   ```
 
 ## Compliance / parity harness
-- Run all three implementations against the 19-case grid:  
-  `./scripts/compare_z5dp_implementations.sh`  
-  Writes CSV log to `/tmp/z5d_c_validation.log`; expected: 19/19 PASS.
+Run all three implementations against the 19-case grid:  
+`./scripts/compare_z5dp_implementations.sh`  
+Expected: 19/19 PASS (C/Python/Java). Log written to `/tmp/z5d_c_validation.log`.
+
+## Big‑n benchmarking (10^20 … 10^1233)
+- C:      `./scripts/benchmark_big_n.sh`  → `scripts/output/z5d_big_n_timings.csv`
+- Python: `./scripts/benchmark_big_n_python.sh` → `scripts/output/z5d_big_n_timings_python.csv`
+- Java:   `./scripts/benchmark_big_n_java.sh`   → `scripts/output/z5d_big_n_timings_java.csv`
+Each script prints a hardware header, performs a warm-up sweep, then logs the measured sweep.
 
 ## Notes
-- Apple Silicon requirement applies to the C build; Python/Java run elsewhere but are not tuned for non-macOS platforms.  
-- C refinement uses dual `mpz_probab_prime_p`; Python uses deterministic bases for <2^64; Java uses `isProbablePrime(50)`.
+- Apple Silicon requirement is for the C build; Python/Java are portable but not tuned for non‑macOS targets.  
+- C precision auto-raises to (bitlen(n)+2048); Python uses gmpy2 mpfr with similar slack; Java uses scaled MathContext + `nextProbablePrime`.  
