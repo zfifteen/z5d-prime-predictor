@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <mpfr.h>
+#include <string.h>
 
 typedef struct {
     uint64_t n;
@@ -28,52 +29,21 @@ static const test_case_t test_cases[] = {
 };
 
 static int run_test(const test_case_t* test) {
-    z5d_config_t config;
-    z5d_result_t result;
-    
-    z5d_config_init(&config);
-    config.precision = 300;  // Higher precision for larger numbers
-    z5d_result_init(&result, config.precision);
-    
     printf("Testing n = %s (%llu)...\n", test->label, (unsigned long long)test->n);
     
-    z5d_predict_nth_prime_ex(&result, test->n, &config);
-    
+    mpz_t prime;
+    mpz_init(prime);
+    z5d_predict_nth_prime_mpz(prime, test->n);
+
     printf("  Predicted:  ");
-    mpfr_out_str(stdout, 10, 0, result.predicted_prime, MPFR_RNDN);
-    printf("\n");
+    gmp_printf("%Zd\n", prime);
     printf("  Expected:   %s\n", test->expected_prime);
-    
-    // Calculate relative error
-    mpfr_t expected_mpfr, error, rel_error_ppm;
-    mpfr_init2(expected_mpfr, config.precision);
-    mpfr_init2(error, config.precision);
-    mpfr_init2(rel_error_ppm, config.precision);
-    
-    mpfr_set_str(expected_mpfr, test->expected_prime, 10, MPFR_RNDN);
-    mpfr_sub(error, result.predicted_prime, expected_mpfr, MPFR_RNDN);
-    mpfr_div(rel_error_ppm, error, expected_mpfr, MPFR_RNDN);
-    mpfr_mul_ui(rel_error_ppm, rel_error_ppm, 1000000, MPFR_RNDN);
-    
-    printf("  Rel Error:  ");
-    mpfr_out_str(stdout, 10, 6, rel_error_ppm, MPFR_RNDN);
-    printf(" ppm\n");
-    
-    double rel_err_ppm = mpfr_get_d(rel_error_ppm, MPFR_RNDN);
-    
-    printf("  Converged:  %s\n", result.converged ? "Yes" : "No");
-    printf("  Iterations: %d\n", result.iterations);
-    printf("  Time:       %.3f ms\n", result.elapsed_ms);
-    
-    // Test passes if relative error < 1000 ppm (0.1%)
-    int passed = (fabs(rel_err_ppm) < 1000.0);
+
+    char* prime_str = mpz_get_str(NULL, 10, prime);
+    int passed = prime_str && strcmp(prime_str, test->expected_prime) == 0;
+    free(prime_str);
     printf("  Status:     %s\n\n", passed ? "PASS" : "FAIL");
-    
-    mpfr_clear(expected_mpfr);
-    mpfr_clear(error);
-    mpfr_clear(rel_error_ppm);
-    z5d_result_clear(&result);
-    z5d_config_clear(&config);
+    mpz_clear(prime);
     
     return passed;
 }

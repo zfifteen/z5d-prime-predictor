@@ -19,9 +19,7 @@ static void print_usage(const char* prog_name) {
     printf("Z5D nth-Prime Predictor v%s\n", z5d_get_version());
     printf("Usage: %s [options] <n>\n", prog_name);
     printf("\nOptions:\n");
-    printf("  -k <K>          Number of terms in R(x) series (default: %d)\n", Z5D_DEFAULT_K);
     printf("  -p <precision>  MPFR precision in bits (default: %d)\n", Z5D_DEFAULT_PRECISION);
-    printf("  -i <max_iter>   Maximum Newton iterations (default: 10)\n");
     printf("  -v              Verbose output\n");
     printf("  -h              Show this help\n");
     printf("\nArguments:\n");
@@ -38,9 +36,7 @@ int main(int argc, char** argv) {
     }
     
     // Parse command line options
-    int K = Z5D_DEFAULT_K;
     int precision = Z5D_DEFAULT_PRECISION;
-    int max_iter = 10;
     int verbose = 0;
     uint64_t n = 0;
     
@@ -48,12 +44,8 @@ int main(int argc, char** argv) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             print_usage(argv[0]);
             return 0;
-        } else if (strcmp(argv[i], "-k") == 0 && i + 1 < argc) {
-            K = atoi(argv[++i]);
         } else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
             precision = atoi(argv[++i]);
-        } else if (strcmp(argv[i], "-i") == 0 && i + 1 < argc) {
-            max_iter = atoi(argv[++i]);
         } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
             verbose = 1;
         } else if (argv[i][0] != '-') {
@@ -70,56 +62,32 @@ int main(int argc, char** argv) {
     // Initialize library
     z5d_init();
     
-    // Configure predictor
-    z5d_config_t config;
-    z5d_config_init(&config);
-    config.precision = precision;
-    config.K = K;
-    config.max_iterations = max_iter;
-    
-    // Initialize result
-    z5d_result_t result;
-    z5d_result_init(&result, precision);
-    
+    /* Set precision globally if user overrode */
+    if (precision != Z5D_DEFAULT_PRECISION) {
+        mpfr_set_default_prec(precision);
+    }
+
     // Print configuration if verbose
     if (verbose) {
         printf("Configuration:\n");
         printf("  n           = %llu\n", (unsigned long long)n);
-        printf("  K           = %d\n", K);
         printf("  precision   = %d bits (~%d decimal places)\n", precision, (int)(precision * 0.30103));
-        printf("  max_iter    = %d\n", max_iter);
         printf("\n");
     }
     
     // Predict nth prime
     printf("Predicting the %llu-th prime...\n", (unsigned long long)n);
-    int ret = z5d_predict_nth_prime_ex(&result, n, &config);
-    
-    // Print results
+    mpz_t prime;
+    mpz_init(prime);
+    int ret = z5d_predict_nth_prime_mpz(prime, n);
+
     printf("\nResults:\n");
-    printf("  Predicted prime: ");
-    mpfr_out_str(stdout, 10, 0, result.predicted_prime, MPFR_RNDN);
-    printf("\n");
-    
+    gmp_printf("  Predicted prime: %Zd\n", prime);
     if (verbose) {
-        printf("  Converged:       %s\n", result.converged ? "Yes" : "No");
-        printf("  Iterations:      %d\n", result.iterations);
-        printf("  Estimated error: ");
-        mpfr_out_str(stdout, 10, 10, result.error, MPFR_RNDN);
-        printf("\n");
+        printf("  Note: derived via calibrated Z5D predictor + discrete refinement\n");
     }
-    
-    printf("  Time elapsed:    %.3f ms\n", result.elapsed_ms);
-    
-    if (ret != 0 && !result.converged) {
-        printf("\nWarning: Did not converge to tolerance in %d iterations.\n", max_iter);
-        printf("         Result may be approximate. Try increasing -i or -p.\n");
-    }
-    
-    // Cleanup
-    z5d_result_clear(&result);
-    z5d_config_clear(&config);
+
+    mpz_clear(prime);
     z5d_cleanup();
-    
     return ret;
 }

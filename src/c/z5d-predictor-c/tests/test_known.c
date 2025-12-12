@@ -36,48 +36,23 @@ static const test_case_t test_cases[] = {
 };
 
 static int run_test(const test_case_t* test) {
-    z5d_config_t config;
-    z5d_result_t result;
-    
-    z5d_config_init(&config);
-    z5d_result_init(&result, Z5D_DEFAULT_PRECISION);
-    
     printf("Testing n = %s (%llu)...\n", test->label, (unsigned long long)test->n);
     
-    z5d_predict_nth_prime_ex(&result, test->n, &config);
-    
+    mpz_t prime;
+    mpz_init(prime);
+    z5d_predict_nth_prime_mpz(prime, test->n);
+
     // Convert prediction to string for comparison
     char pred_str[256];
-    mpfr_sprintf(pred_str, "%.0Rf", result.predicted_prime);
-    
-    // Calculate relative error
-    mpfr_t expected_mpfr, error, rel_error_pct;
-    mpfr_init2(expected_mpfr, Z5D_DEFAULT_PRECISION);
-    mpfr_init2(error, Z5D_DEFAULT_PRECISION);
-    mpfr_init2(rel_error_pct, Z5D_DEFAULT_PRECISION);
-    
-    mpfr_set_str(expected_mpfr, test->expected_prime, 10, MPFR_RNDN);
-    mpfr_sub(error, result.predicted_prime, expected_mpfr, MPFR_RNDN);
-    mpfr_div(rel_error_pct, error, expected_mpfr, MPFR_RNDN);
-    mpfr_mul_ui(rel_error_pct, rel_error_pct, 100, MPFR_RNDN);
-    
-    double rel_err_pct = mpfr_get_d(rel_error_pct, MPFR_RNDN);
+    gmp_sprintf(pred_str, "%Zd", prime);
     
     printf("  Predicted:  %s\n", pred_str);
     printf("  Expected:   %s\n", test->expected_prime);
-    printf("  Rel Error:  %.6f%%\n", rel_err_pct);
-    printf("  Converged:  %s\n", result.converged ? "Yes" : "No");
-    printf("  Time:       %.3f ms\n", result.elapsed_ms);
     
-    // Test passes if relative error < 1% (very generous for now)
-    int passed = (fabs(rel_err_pct) < 1.0);
+    int passed = (strcmp(pred_str, test->expected_prime) == 0);
     printf("  Status:     %s\n\n", passed ? "PASS" : "FAIL");
     
-    mpfr_clear(expected_mpfr);
-    mpfr_clear(error);
-    mpfr_clear(rel_error_pct);
-    z5d_result_clear(&result);
-    z5d_config_clear(&config);
+    mpz_clear(prime);
     
     return passed;
 }
