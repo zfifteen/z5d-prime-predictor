@@ -12,8 +12,8 @@ public final class Z5DMain {
             System.exit(1);
         }
         try {
-            long n = Long.parseLong(args[0]);
-            PredictResult res = Z5DPredictor.predictNthPrime(n);
+            BigInteger n = new BigInteger(args[0]);
+            PredictResult res = Z5DPredictor.predictNthPrimeBig(n);
             BigInteger prime = res.prime();
             System.out.println(prime);
         } catch (Exception e) {

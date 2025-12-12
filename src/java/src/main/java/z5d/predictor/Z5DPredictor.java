@@ -16,7 +16,7 @@ public final class Z5DPredictor {
 
     private Z5DPredictor() {}
 
-    public static final String VERSION = "2.0.0";
+    public static final String VERSION = "2.1.0";
 
     // Constants (match C/Python)
     private static final double C_CAL = -0.00247;
@@ -60,7 +60,7 @@ public final class Z5DPredictor {
     }
 
     /**
-    * Public API: predict nth prime (probable prime; exact on grid).
+    * Public API: predict nth prime (probable prime; exact on grid) for 64-bit n.
     */
     public static PredictResult predictNthPrime(long n) {
         if (n < 1) throw new IllegalArgumentException("n must be >= 1");
@@ -76,6 +76,21 @@ public final class Z5DPredictor {
         return new PredictResult(prime, estimate, 1, true, "z5d_closed_form+refine");
     }
 
+    /**
+     * Public API: predict nth prime for arbitrary-size n (BigInteger).
+     */
+    public static PredictResult predictNthPrimeBig(BigInteger n) {
+        if (n == null || n.signum() <= 0) throw new IllegalArgumentException("n must be >= 1");
+
+        if (n.bitLength() <= 63) {
+            return predictNthPrime(n.longValue());
+        }
+
+        BigInteger estimate = closedFormEstimateBig(n);
+        BigInteger prime = refineToPrimeForward(estimate);
+        return new PredictResult(prime, estimate, 1, true, "z5d_closed_form+refine_big");
+    }
+
     public static String getVersion() {
         return VERSION;
     }
@@ -83,17 +98,33 @@ public final class Z5DPredictor {
     // ------------------- Internals -------------------
 
     private static BigInteger closedFormEstimateBig(long n) {
-        if (n < 2) return BigInteger.valueOf(2);
-        double ln = Math.log(n);
+        return closedFormEstimateBig(BigInteger.valueOf(n));
+    }
+
+    private static BigInteger closedFormEstimateBig(BigInteger n) {
+        if (n.compareTo(BigInteger.valueOf(2)) < 0) return BigInteger.valueOf(2);
+
+        int digits = n.toString().length();
+        int precision = Math.max(64, digits + 50);
+        MathContext mc = new MathContext(precision, RoundingMode.HALF_UP);
+
+        double ln = lnBigInteger(n);
         double lnln = Math.log(ln);
-        double pnt = n * (ln + lnln - 1.0 + (lnln - 2.0) / ln);
-        double lnPnt = Math.log(pnt);
-        double dTerm = Math.pow(lnPnt / E_FOURTH, 2.0) * pnt * C_CAL;
-        double eTerm = Math.pow(pnt, -1.0 / 3.0) * pnt * KAPPA_STAR;
-        double est = pnt + dTerm + eTerm;
-        if (Double.isNaN(est) || est <= 0) est = pnt;
-        BigDecimal bd = new BigDecimal(est, MathContext.DECIMAL64);
-        return bd.setScale(0, RoundingMode.HALF_UP).toBigInteger();
+
+        BigDecimal nBD = new BigDecimal(n, mc);
+        BigDecimal f = bd(ln + lnln - 1.0 + (lnln - 2.0) / ln, mc);
+        BigDecimal pnt = nBD.multiply(f, mc);
+
+        double lnPnt = lnBigInteger(pnt.toBigInteger());
+        double dFactor = Math.pow(lnPnt / E_FOURTH, 2.0) * C_CAL;
+        double eFactor = Math.exp(-lnPnt / 3.0) * KAPPA_STAR;
+
+        BigDecimal est = pnt
+                .add(pnt.multiply(bd(dFactor, mc), mc), mc)
+                .add(pnt.multiply(bd(eFactor, mc), mc), mc);
+
+        if (est.signum() <= 0) est = pnt;
+        return est.setScale(0, RoundingMode.HALF_UP).toBigInteger();
     }
 
     private static BigInteger refineToPrime(BigInteger candidate) {
@@ -129,6 +160,13 @@ public final class Z5DPredictor {
         }
     }
 
+    private static BigInteger refineToPrimeForward(BigInteger candidate) {
+        if (candidate.compareTo(BigInteger.TWO) < 0) candidate = BigInteger.TWO;
+        // Include candidate itself if prime by stepping back 1 before nextProbablePrime.
+        candidate = candidate.subtract(BigInteger.ONE);
+        return candidate.nextProbablePrime();
+    }
+
     private static boolean isAcceptablePrime(BigInteger n) {
         if (divisibleBySmallPrime(n)) return false;
         return n.isProbablePrime(50);
@@ -162,5 +200,18 @@ public final class Z5DPredictor {
         if (delta == 0) return n;
         if (direction < 0) return n.subtract(BigInteger.valueOf(delta));
         return n.add(BigInteger.valueOf(delta));
+    }
+
+    private static double lnBigInteger(BigInteger n) {
+        int bitLen = n.bitLength();
+        int shift = Math.max(0, bitLen - 1022); // keep mantissa in range of double
+        BigInteger mantissa = n.shiftRight(shift);
+        double m = mantissa.doubleValue();
+        double log2 = Math.log(m) / Math.log(2.0) + shift;
+        return log2 * Math.log(2.0);
+    }
+
+    private static BigDecimal bd(double d, MathContext mc) {
+        return new BigDecimal(d, mc);
     }
 }
