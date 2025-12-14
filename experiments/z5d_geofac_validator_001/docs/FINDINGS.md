@@ -1,7 +1,7 @@
 # FINDINGS: Z5D as Geofac Validator
 
-**Date**: 2025-12-14 21:42:04 UTC  
-**Run ID**: z5d_validator_test_20251214_214202  
+**Date**: 2025-12-14 21:44:51 UTC  
+**Run ID**: z5d_validator_test_20251214_214450  
 **Status**: FAIL
 
 ## Conclusion
@@ -29,7 +29,7 @@
 
 ```json
 {
-  "run_id": "z5d_validator_test_20251214_214202",
+  "run_id": "z5d_validator_test_20251214_214450",
   "seed": 42,
   "top_k": 10,
   "scale_range": "10^14 to 10^18",
@@ -91,7 +91,7 @@ Calibration curves show the relationship between Geofac resonance scores and Z5D
 - Over-confident: observed < predicted
 - Under-confident: observed > predicted
 
-See: `artifacts/analysis/z5d_validator_test_20251214_214202_calibration.json` for detailed data.
+See: `artifacts/analysis/z5d_validator_test_20251214_214450_calibration.json` for detailed data.
 
 ### ROC Analysis
 
@@ -101,7 +101,7 @@ ROC-style analysis shows how agreement rate changes with resonance score thresho
 - AUC = 0.5: random performance
 - AUC = 1.0: perfect discrimination
 
-See: `artifacts/analysis/z5d_validator_test_20251214_214202_roc.json` for detailed data.
+See: `artifacts/analysis/z5d_validator_test_20251214_214450_roc.json` for detailed data.
 
 ## Methodology
 
@@ -137,13 +137,13 @@ All operations use:
 experiments/z5d_geofac_validator_001/
 ├── artifacts/
 │   ├── outputs/
-│   │   ├── z5d_validator_test_20251214_214202.csv              # Standard results
-│   │   └── z5d_validator_test_20251214_214202_metrics.json     # Summary metrics
+│   │   ├── z5d_validator_test_20251214_214450.csv              # Standard results
+│   │   └── z5d_validator_test_20251214_214450_metrics.json     # Summary metrics
 │   └── analysis/
-│       ├── z5d_validator_test_20251214_214202_calibration.json # Calibration data
-│       ├── z5d_validator_test_20251214_214202_calibration.png  # Calibration plot
-│       ├── z5d_validator_test_20251214_214202_roc.json         # ROC data
-│       └── z5d_validator_test_20251214_214202_roc.png          # ROC plot
+│       ├── z5d_validator_test_20251214_214450_calibration.json # Calibration data
+│       ├── z5d_validator_test_20251214_214450_calibration.png  # Calibration plot
+│       ├── z5d_validator_test_20251214_214450_roc.json         # ROC data
+│       └── z5d_validator_test_20251214_214450_roc.png          # ROC plot
 └── docs/
     └── FINDINGS.md                    # This document
 ```
@@ -174,4 +174,4 @@ experiments/z5d_geofac_validator_001/
 
 ---
 
-**Generated**: 2025-12-14T21:42:04.017593+00:00
+**Generated**: 2025-12-14T21:44:51.651096+00:00
