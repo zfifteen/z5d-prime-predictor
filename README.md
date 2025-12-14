@@ -1,17 +1,18 @@
 # Z5D Prime Predictor
 
-Cross-language nth‑prime predictor (C / Python / Java) with calibrated closed‑form estimate + deterministic refinement. Exact on the 10^0…10^18 grid and validated for very large n (up to 10^1233) via MPFR/GMP (C), gmpy2 (Python), and BigInteger (Java).
+Cross-language nth‑prime predictor (C / Python / Java) with a calibrated analytic seed (“closed‑form” estimator) plus a short refinement search. Exact on the shipped 10^0…10^18 grid; beyond that, correctness is empirical (validated in sweeps up to 10^1233) using MPFR/GMP (C), gmpy2 (Python), and BigInteger (Java).
 
 ## How it works
-- **Estimator** (Z5D closed form):  
+- **Estimator** (analytic / “closed‑form” seed):  
   pnt = n(ln n + ln ln n − 1 + (ln ln n − 2)/ln n)  
   d-term with c = −0.00016667; e-term with κ* = 0.065·pnt^(2/3); rounded to nearest int.
-- **Refinement**: forward prime search (`next_prime`/`nextProbablePrime`) after snapping to a suitable starting point. Ensures a probable prime near the estimate.
+- **Refinement**: short forward prime search (`next_prime`/`nextProbablePrime`) from the seed to land on a nearby probable prime; not a proof-backed guarantee for all n.
 - **Ground truth grid**: exact primes for n = 10^0…10^18 in `data/KNOWN_PRIMES.md` to lock parity across languages.
 
 ## Scope and guarantees
-- Exact on the 19 benchmark indices.  
-+- Big‑n path supports n up to 10^1233 (tested); precision scales with bit length + slack.  
+- Exact on the 19 benchmark indices (10^0…10^18) we ship.  
+- Calibrated path enforces a minimum n = 10,000; smaller n are rejected on this path to avoid misinterpretation.  
+- Big‑n path exercised up to n = 10^1233; results are empirical, not a formal proof.  
 - Outputs are probable primes (GMP/Java: strong probable prime; Python: gmpy2 probable prime).
 
 ## Layout
