@@ -182,7 +182,7 @@ make clean && make
 ### Run Experiment
 
 ```bash
-cd experiments/z5d_geofac_alignment_001/scripts
+cd experiments/z5d_geofac_alignment_001/tools
 
 # Quick test (10k samples, reduced processing)
 python run_experiment.py --samples 10000 --max-process 1000 --test

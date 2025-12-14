@@ -21,7 +21,7 @@
    - Successfully builds parent shared libraries
 
 4. **Shell script demonstration**: ✓
-   - `scripts/demo.sh` provides comprehensive demonstration
+   - `tools/demo.sh` provides comprehensive demonstration
    - Executable and well-documented
    - Shows multiple use cases and configurations
 
@@ -172,7 +172,7 @@ z5d-predictor-c/
 ├── tests/
 │   ├── test_known.c      # Known values test
 │   └── test_medium_scale.c  # Medium scale test
-└── scripts/
+└── tools/
     └── demo.sh           # Demonstration script
 ```
 

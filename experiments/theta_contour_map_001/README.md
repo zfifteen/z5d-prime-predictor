@@ -26,7 +26,7 @@ pip install scipy
 ### Run Test Experiment (Fast)
 
 ```bash
-cd scripts
+cd tools
 python run_contour_experiment.py --test
 ```
 
@@ -38,7 +38,7 @@ This runs with:
 ### Run Full Experiment
 
 ```bash
-cd scripts
+cd tools
 python run_contour_experiment.py --full
 ```
 
@@ -50,7 +50,7 @@ This runs with:
 ### Generate Data Only (No Plots)
 
 ```bash
-cd scripts
+cd tools
 python run_contour_experiment.py --data-only
 ```
 
@@ -60,7 +60,7 @@ Useful for environments without matplotlib display support.
 
 ```
 theta_contour_map_001/
-├── scripts/                      # Python scripts
+├── tools/                        # Python scripts
 │   ├── generate_contour_map.py   # Core contour generation
 │   └── run_contour_experiment.py # Orchestration script
 ├── artifacts/                    # Generated data (gitignored)

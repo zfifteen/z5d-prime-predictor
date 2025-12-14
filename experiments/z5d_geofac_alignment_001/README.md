@@ -17,7 +17,7 @@ If validated, this demonstrates deterministic alignment between geometric and an
 
 ```
 z5d_geofac_alignment_001/
-├── scripts/              # Python scripts for experiment pipeline
+├── tools/                # Python scripts for experiment pipeline
 │   ├── generate_qmc_seeds.py      # Generate Sobol/Halton sequences
 │   ├── run_z5d_peaks.py           # Extract Z5D predictor peaks
 │   ├── run_geofac_peaks.py        # Extract Geofac resonance peaks
@@ -50,7 +50,7 @@ cd -
 ### Run Test Experiment (Fast)
 
 ```bash
-cd scripts
+cd tools
 python run_experiment.py --samples 1000 --max-process 100 --test
 ```
 
@@ -63,7 +63,7 @@ This runs a quick validation with:
 ### Run Full Experiment
 
 ```bash
-cd scripts
+cd tools
 python run_experiment.py --full
 ```
 

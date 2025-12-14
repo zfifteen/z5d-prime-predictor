@@ -255,7 +255,7 @@ make clean && make
 ### Run Experiment
 
 ```bash
-cd experiments/z5d_geofac_alignment_001/scripts
+# Script assumes it is invoked from repo root; adjust if relocated.
 
 # Quick test (10k samples, reduced processing)
 python run_experiment.py --samples 10000 --max-process 1000 --test
