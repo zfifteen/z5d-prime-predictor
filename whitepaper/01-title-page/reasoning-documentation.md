@@ -320,8 +320,8 @@ The z_framework_params.h file revealed:
 
 **Critical Constants:**
 - KAPPA_GEO_DEFAULT = 0.3 (geodesic exponent)
-- KAPPA_STAR_DEFAULT = 0.04449 (Z5D calibration)
-- Z5D_C_CALIBRATED = -0.00247 (optimization result)
+- KAPPA_STAR_DEFAULT = 0.06500 (Z5D calibration, 2025-12-14 large-n run)
+- Z5D_C_CALIBRATED = -0.00016667 (Z5D calibration, 2025-12-14 large-n run)
 
 **Thought**: These are empirically derived, bootstrap-validated values. The paper needs to explain:
 1. How they were derived

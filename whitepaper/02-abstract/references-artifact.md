@@ -38,15 +38,15 @@
    - Define: `KAPPA_GEO_DEFAULT 0.3`
    - Description: Geodesic exponent
 
-6. **κ* = 0.04449**
+6. **κ* = 0.06500**
    - Source: `/src/c/includes/z_framework_params.h`
-   - Define: `KAPPA_STAR_DEFAULT 0.04449`
-   - Description: Z5D calibration factor
+   - Define: `KAPPA_STAR_DEFAULT 0.06500`
+   - Description: Z5D calibration factor (2025-12-14 large-n calibration)
 
-7. **c = -0.00247**
+7. **c = -0.00016667**
    - Source: `/src/c/includes/z_framework_params.h`
-   - Define: `Z5D_C_CALIBRATED -0.00247`
-   - Description: Least-squares optimization result
+   - Define: `Z5D_C_CALIBRATED -0.00016667`
+   - Description: Calibration result (2025-12-14 large-n calibration)
 
 ### Algorithmic Details
 

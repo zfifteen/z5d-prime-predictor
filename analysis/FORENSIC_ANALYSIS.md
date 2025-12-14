@@ -1,6 +1,6 @@
 # Forensic Analysis of z5d-prime-predictor Project
 
-- The Z5D algorithm employs a proprietary five-dimensional model inspired by the Riemann Hypothesis, utilizing geodesic mapping with kappa_geo=0.3 for prime-density transformations, achieving sub-0.01% error rates at k=10^5 through least-squares calibrated constants like c=-0.00247 and kappa_star=0.04449.
+- The Z5D algorithm employs a proprietary five-dimensional model inspired by the Riemann Hypothesis, utilizing geodesic mapping with kappa_geo=0.3 for prime-density transformations, achieving sub-0.01% error rates at k=10^5 through calibrated constants (latest large-n calibration: c≈-0.00016667, kappa_star≈0.06500).
 - Optimized exclusively for Apple Silicon, the C implementations leverage MPFR/GMP for 50-decimal precision arithmetic, with dynamic scaling thresholds (e.g., high precision below Δ_n=10^-16) to handle ultra-large k up to 10^16, validated via 1000-resample bootstrap CIs at 95% confidence.
 - The z5d-mersenne module implements a 'wave-knob' centered scanner, symmetrically searching around Z5D estimates using wheel factorization and Miller-Rabin primality testing, designed for exploratory hunts at scales like k=10^1233 without guaranteeing exact nth primes.
 - prime-generator tool supports forward walking from arbitrary starts (e.g., 10^300), employing Z5D-informed jumps and CSV logging, as evidenced by output files demonstrating discovery of 300-digit primes like 10^300 * 4501 in under 7 seconds on Apple hardware.

@@ -40,7 +40,7 @@ All experiments in this directory should follow these standards:
 ```
 experiment_name/
 ├── README.md              # Experiment description and usage
-├── scripts/               # Python scripts for running experiment
+├── tools/                 # Python scripts for running experiment
 ├── artifacts/             # Generated data (gitignored)
 │   ├── seedsets/         # QMC seeds or input data
 │   ├── outputs/          # System outputs

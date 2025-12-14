@@ -69,12 +69,12 @@ extern "C" {
 /* Z_5D calibration factor for e-term scaling */
 /* Reverted to optimal value for ultra-low Z_5D errors (<0.01% at k=10^5) */
 /* Context: Enhanced prediction with curvature correction */
-#define ZF_KAPPA_STAR_DEFAULT       0.04449  /* *** KEY PARAMETER from params.py *** */
+#define ZF_KAPPA_STAR_DEFAULT       0.06500  /* *** KEY PARAMETER from params.py *** */
 #define ZF_MIN_KAPPA_STAR           0.001
 #define ZF_MAX_KAPPA_STAR           1.0
 
 /* Z_5D additional calibration parameters */
-#define ZF_Z5D_C_CALIBRATED         -0.00247  /* From least-squares optimization */
+#define ZF_Z5D_C_CALIBRATED         -0.00016667  /* From calibration 2025-12-14 (large-n focus) */
 #define ZF_Z5D_VARIANCE_TARGET      0.118     /* Target variance for geodesic scaling */
 
 /* ========================================================================================

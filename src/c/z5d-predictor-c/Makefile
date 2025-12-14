@@ -157,7 +157,7 @@ benchmark: $(BENCH_EXECUTABLE)
 demo: $(CLI_EXECUTABLE)
 	@echo ""
 	@echo "🚀 Running demonstration..."
-	@./scripts/demo.sh
+	@./tools/demo.sh
 
 # Info
 info:

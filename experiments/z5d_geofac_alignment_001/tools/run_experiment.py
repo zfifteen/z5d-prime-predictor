@@ -24,7 +24,7 @@ from typing import List
 class ExperimentRunner:
     def __init__(self, base_dir: Path, test_mode: bool = False):
         self.base_dir = base_dir
-        self.scripts_dir = base_dir / 'scripts'
+        self.scripts_dir = base_dir / 'tools'
         self.artifacts_dir = base_dir / 'artifacts'
         self.test_mode = test_mode
         

@@ -20,8 +20,8 @@ from typing import Optional
 # ---------------------- Constants (match C) ----------------------
 Z5D_PREDICTOR_VERSION = "2.1.0"
 
-_C_CAL = gp.mpfr("-0.00247")
-_KAPPA_STAR = gp.mpfr("0.04449")
+_C_CAL = gp.mpfr("-0.00016667")
+_KAPPA_STAR = gp.mpfr("0.06500")
 _E_FOURTH = gp.exp(gp.mpfr(4))
 
 _KNOWN_PRIMES = {
@@ -58,7 +58,7 @@ class PredictResult:
 
 
 # ---------------------- Math helpers ----------------------
-def _closed_form_estimate(n: int) -> gp.mpz:
+def closed_form_estimate(n: int, c: gp.mpfr = _C_CAL, kappa_star: gp.mpfr = _KAPPA_STAR) -> gp.mpz:
     """
     Calibrated closed-form used by the C implementation.
     pnt = n * (ln n + ln ln n - 1 + (ln ln n - 2)/ln n)
@@ -70,6 +70,8 @@ def _closed_form_estimate(n: int) -> gp.mpz:
 
     prec_bits = max(2048, int(gp.log2(n)) + 2048)
     with gp.local_context(gp.context(), precision=prec_bits):
+        c = gp.mpfr(c)
+        kappa_star = gp.mpfr(kappa_star)
         dn = gp.mpfr(n)
         ln_n = gp.log(dn)
         ln_ln_n = gp.log(ln_n)
@@ -77,8 +79,8 @@ def _closed_form_estimate(n: int) -> gp.mpz:
         if pnt <= 0:
             pnt = dn
         ln_pnt = gp.log(pnt)
-        d_term = ((ln_pnt / _E_FOURTH) ** 2) * pnt * _C_CAL
-        e_term = (pnt ** gp.mpfr("-0.3333333333333333")) * pnt * _KAPPA_STAR
+        d_term = ((ln_pnt / _E_FOURTH) ** 2) * pnt * c
+        e_term = (pnt ** gp.mpfr("-0.3333333333333333")) * pnt * kappa_star
         est = pnt + d_term + e_term
         if est <= 0:
             est = pnt
@@ -108,7 +110,7 @@ def predict_nth_prime(n: int) -> PredictResult:
         p = _KNOWN_PRIMES[n]
         return PredictResult(prime=p, estimate=p, iterations=0, converged=True)
 
-    est = _closed_form_estimate(n)
+    est = closed_form_estimate(n)
     prime = _refine_to_prime(est)
     return PredictResult(prime=int(prime), estimate=int(est), iterations=1, converged=True)
 

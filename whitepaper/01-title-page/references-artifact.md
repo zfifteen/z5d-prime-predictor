@@ -206,8 +206,8 @@
 
 5. **Key Constants from z_framework_params.h**
    - KAPPA_GEO_DEFAULT: 0.3 (geodesic exponent)
-   - KAPPA_STAR_DEFAULT: 0.04449 (Z5D calibration factor)
-   - Z5D_C_CALIBRATED: -0.00247 (least-squares optimization)
+   - KAPPA_STAR_DEFAULT: 0.06500 (Z5D calibration factor, large-n calibration 2025-12-14)
+   - Z5D_C_CALIBRATED: -0.00016667 (large-n calibration 2025-12-14)
    - E_SQUARED: 7.38905609893065
    - GOLDEN_PHI: 1.61803398874989
 

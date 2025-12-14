@@ -96,7 +96,7 @@
 
 ### Decision 4: Include Specific Calibration Parameters
 
-**Choice:** List κ_geo = 0.3, κ* = 0.04449, c = -0.00247
+**Choice:** List κ_geo = 0.3, κ* = 0.06500, c = -0.00016667 (updated 2025-12-14 calibration)
 
 **Reasoning:**
 - Demonstrates completeness of implementation

@@ -35,7 +35,7 @@ z5d-predictor-c/
 ├── tests/
 │   ├── test_known.c          # Known values test (10^1 - 10^9)
 │   └── test_medium_scale.c   # Medium scale test (10^10 - 10^12)
-├── scripts/
+├── tools/
 │   └── demo.sh               # Demonstration script
 ├── Makefile                  # Build system (inherits from parent)
 ├── README.md                 # This file
@@ -224,7 +224,7 @@ Following the unified-framework repository guidelines:
 3. **Self-Contained**: All artifacts in `z5d-predictor-c/` folder
 4. **Invoke Parent for Shared Libs**: `make shared` delegates to parent
 5. **Makefile Builds Executable**: All targets build successfully
-6. **Shell Script Demo**: `scripts/demo.sh` demonstrates capabilities
+6. **Shell Script Demo**: `tools/demo.sh` demonstrates capabilities
 
 ## License
 

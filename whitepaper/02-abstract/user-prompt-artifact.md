@@ -97,8 +97,8 @@ Drawing from repository documentation:
 
 ### Calibration Constants
 - **κ_geo**: 0.3 (geodesic exponent)
-- **κ***: 0.04449 (Z5D calibration factor)
-- **c**: -0.00247 (least-squares optimized)
+- **κ***: 0.06500 (Z5D calibration factor, 2025-12-14 calibration)
+- **c**: -0.00016667 (2025-12-14 calibration)
 
 ### Enhancement Claims
 - 15-20% density enhancement over PNT
