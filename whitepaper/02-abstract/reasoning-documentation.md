@@ -108,7 +108,7 @@
 
 ### Parameter Specification
 
-**Decision:** Include specific calibration values (κ_geo = 0.3, κ* = 0.04449, c = -0.00247)
+**Decision:** Include specific calibration values (κ_geo = 0.3, κ* = 0.06500, c = -0.00016667) based on the 2025-12-14 large-n calibration
 
 **Rationale:**
 - Demonstrates rigor and reproducibility

@@ -19,16 +19,11 @@
 #include <sys/time.h>
 
 /* ---- Constants (synchronized with unified-framework z_framework_params.h) --- */
-#define Z5D_C_CAL_STR        "-0.00247"
-#define Z5D_KAPPA_STAR_STR   "0.04449"
+#define Z5D_C_CAL_STR        "-0.00016667"
+#define Z5D_KAPPA_STAR_STR   "0.06500000"
 
 /* Static flag for initialization */
 static int z5d_initialized = 0;
-
-/* Small prime presieve up to 97 */
-static const unsigned SMALL_PRIMES[] = {
-    3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97
-};
 
 static double now_ms(void) {
     struct timeval tv;
@@ -77,37 +72,6 @@ void z5d_result_init(z5d_result_t* result, mpfr_prec_t precision) {
 void z5d_result_clear(z5d_result_t* result) {
     mpfr_clear(result->predicted_prime);
     mpfr_clear(result->error);
-}
-
-/* --------- Helper: snap to nearest 6k±1 in given direction --------- */
-static void snap_to_6k_pm1(mpz_t n, int dir) {
-    unsigned long r = mpz_fdiv_ui(n, 6);
-    long delta = 0;
-    if (dir < 0) { /* snap backward */
-        if (r == 0) delta = 1;
-        else if (r == 2) delta = 1;
-        else if (r == 3) delta = 2;
-        else if (r == 4) delta = 3;
-    } else {       /* snap forward / stay */
-        if (r == 0) delta = 1;
-        else if (r == 2) delta = 3;
-        else if (r == 3) delta = 2;
-        else if (r == 4) delta = 1;
-    }
-    if (delta > 0) {
-        if (dir < 0) mpz_sub_ui(n, n, (unsigned long)delta);
-        else mpz_add_ui(n, n, (unsigned long)delta);
-    }
-}
-
-/* --------- Helper: small-prime presieve --------- */
-static int divisible_by_small_prime(const mpz_t n) {
-    for (size_t i = 0; i < sizeof(SMALL_PRIMES)/sizeof(SMALL_PRIMES[0]); ++i) {
-        unsigned p = SMALL_PRIMES[i];
-        if (mpz_cmp_ui(n, p) == 0) return 0; /* n is that small prime */
-        if (mpz_fdiv_ui(n, p) == 0) return 1;
-    }
-    return 0;
 }
 
 /* --------- Calibrated Z5D predictor (MPFR) --------- */
@@ -248,7 +212,8 @@ int z5d_predict_nth_prime_mpz_big(mpz_t prime_out, const mpz_t n) {
     /* Precision scales with bit length of n; add generous slack for logs */
     mpfr_prec_t prec = Z5D_DEFAULT_PRECISION;
     size_t bits = mpz_sizeinbase(n, 2);
-    if (bits + 2048 > prec) prec = (mpfr_prec_t)(bits + 2048);
+    mpfr_prec_t required_prec = (mpfr_prec_t)(bits + 2048);
+    if (required_prec > prec) prec = required_prec;
 
     mpfr_t k_mp, pred;
     mpfr_init2(k_mp, prec);

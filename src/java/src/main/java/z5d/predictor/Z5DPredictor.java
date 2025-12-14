@@ -19,8 +19,8 @@ public final class Z5DPredictor {
     public static final String VERSION = "2.1.0";
 
     // Constants (match C/Python)
-    private static final double C_CAL = -0.00247;
-    private static final double KAPPA_STAR = 0.04449;
+    private static final double C_CAL = -0.00016667;
+    private static final double KAPPA_STAR = 0.06500;
     private static final double E_FOURTH = Math.exp(4.0);
 
     private static final int MIN_WINDOW = 256;

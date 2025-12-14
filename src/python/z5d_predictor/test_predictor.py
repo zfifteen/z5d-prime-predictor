@@ -24,7 +24,7 @@ KNOWN = [
 class TestPredictor(unittest.TestCase):
     def test_version(self):
         self.assertEqual(get_version(), Z5D_PREDICTOR_VERSION)
-        self.assertEqual(Z5D_PREDICTOR_VERSION, "2.0.0")
+        self.assertEqual(Z5D_PREDICTOR_VERSION, "2.1.0")
 
     def test_known_grid_exact(self):
         for n, p in KNOWN:
