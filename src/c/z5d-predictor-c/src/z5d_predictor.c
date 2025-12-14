@@ -19,10 +19,8 @@
 #include <sys/time.h>
 
 /* ---- Constants (synchronized with unified-framework z_framework_params.h) --- */
-#define Z5D_C_CAL        (-0.00247)
-#define Z5D_KAPPA_STAR   (0.04449)
-#define Z5D_E_FOURTH     (54.598150033144236)   /* e^4 */
-#define Z5D_E_SQUARED    (7.38905609893065)     /* e^2 */
+#define Z5D_C_CAL_STR        "-0.00247"
+#define Z5D_KAPPA_STAR_STR   "0.04449"
 
 /* Static flag for initialization */
 static int z5d_initialized = 0;
@@ -114,8 +112,16 @@ static int divisible_by_small_prime(const mpz_t n) {
 
 /* --------- Calibrated Z5D predictor (MPFR) --------- */
 static void z5d_predict_mpfr(mpfr_t res, const mpfr_t k_mp, mpfr_prec_t prec) {
-    mpfr_t ln_k, ln_ln_k, pnt, ln_pnt, d_term, e_term, tmp, correction;
-    mpfr_inits2(prec, ln_k, ln_ln_k, pnt, ln_pnt, d_term, e_term, tmp, correction, (mpfr_ptr)0);
+    mpfr_t ln_k, ln_ln_k, pnt, ln_pnt, d_term, e_term, tmp, correction, c_cal, k_star, e_fourth;
+    mpfr_inits2(prec, ln_k, ln_ln_k, pnt, ln_pnt, d_term, e_term, tmp, correction, c_cal, k_star, e_fourth, (mpfr_ptr)0);
+
+    /* Initialize constants with full precision from strings/calculation */
+    mpfr_set_str(c_cal, Z5D_C_CAL_STR, 10, MPFR_RNDN);
+    mpfr_set_str(k_star, Z5D_KAPPA_STAR_STR, 10, MPFR_RNDN);
+    
+    /* Calculate e^4 exactly in MPFR precision */
+    mpfr_set_ui(tmp, 4, MPFR_RNDN);
+    mpfr_exp(e_fourth, tmp, MPFR_RNDN);
 
     mpfr_log(ln_k, k_mp, MPFR_RNDN);
     mpfr_log(ln_ln_k, ln_k, MPFR_RNDN);
@@ -132,19 +138,20 @@ static void z5d_predict_mpfr(mpfr_t res, const mpfr_t k_mp, mpfr_prec_t prec) {
     mpfr_set_ui(d_term, 0, MPFR_RNDN);
     mpfr_log(ln_pnt, pnt, MPFR_RNDN);
     if (mpfr_cmp_ui(ln_pnt, 0) > 0) {
-        mpfr_div_d(tmp, ln_pnt, Z5D_E_FOURTH, MPFR_RNDN);
+        mpfr_div(tmp, ln_pnt, e_fourth, MPFR_RNDN);
         mpfr_mul(d_term, tmp, tmp, MPFR_RNDN);
         mpfr_mul(d_term, d_term, pnt, MPFR_RNDN);
-        mpfr_mul_d(d_term, d_term, Z5D_C_CAL, MPFR_RNDN);
+        mpfr_mul(d_term, d_term, c_cal, MPFR_RNDN);
     }
 
     /* e_term = pnt^(-1/3) * pnt * k_star */
     mpfr_set_ui(e_term, 0, MPFR_RNDN);
     if (mpfr_cmp_ui(pnt, 0) > 0) {
-        mpfr_set_d(tmp, -1.0/3.0, MPFR_RNDN);
+        mpfr_set_si(tmp, -1, MPFR_RNDN);
+        mpfr_div_ui(tmp, tmp, 3, MPFR_RNDN); /* Calculate exact -1/3 */
         mpfr_pow(e_term, pnt, tmp, MPFR_RNDN);
         mpfr_mul(e_term, e_term, pnt, MPFR_RNDN);
-        mpfr_mul_d(e_term, e_term, Z5D_KAPPA_STAR, MPFR_RNDN);
+        mpfr_mul(e_term, e_term, k_star, MPFR_RNDN);
     }
 
     mpfr_add(res, pnt, d_term, MPFR_RNDN);
@@ -152,7 +159,7 @@ static void z5d_predict_mpfr(mpfr_t res, const mpfr_t k_mp, mpfr_prec_t prec) {
     if (mpfr_sgn(res) < 0) mpfr_set(res, pnt, MPFR_RNDN); /* clamp */
     mpfr_round(res, res);
 
-    mpfr_clears(ln_k, ln_ln_k, pnt, ln_pnt, d_term, e_term, tmp, correction, (mpfr_ptr)0);
+    mpfr_clears(ln_k, ln_ln_k, pnt, ln_pnt, d_term, e_term, tmp, correction, c_cal, k_star, e_fourth, (mpfr_ptr)0);
 }
 
 /* --------- Refinement: forward probable prime (GMP) --------- */
