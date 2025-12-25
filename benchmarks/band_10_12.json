@@ -1,0 +1,17 @@
+{
+  "band": "10^12",
+  "n": 1000000000000,
+  "z5d": {
+    "mean_time_s": 0,
+    "std_time_s": 0,
+    "trials": [0],
+    "predictions": ["29996224275833"]
+  },
+  "primesieve": {
+    "mean_time_s": inf,
+    "std_time_s": 0,
+    "trials": [inf],
+    "primes": ["timeout"]
+  },
+  "z5d_speedup_factor": N/A
+}
