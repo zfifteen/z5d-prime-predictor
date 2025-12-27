@@ -4,6 +4,20 @@ This directory contains experimental validations and hypothesis tests for the Z5
 
 ## Active Experiments
 
+### z5d_geofac_validator_001
+
+**Status**: ✓ READY  
+**Purpose**: Use Z5D's factor-ranking as a validator for Geofac's resonance scores  
+**Innovation**: Orthogonal signals (resonance vs. geometric ranking) for false positive reduction  
+
+**Quick Start**:
+```bash
+cd z5d_geofac_validator_001/tools
+python run_experiment.py --test
+```
+
+See [z5d_geofac_validator_001/README.md](z5d_geofac_validator_001/README.md) for details.
+
 ### z5d_geofac_alignment_001
 
 **Status**: ✓ PASSED  
